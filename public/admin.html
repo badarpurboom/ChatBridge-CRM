@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Business CRM - Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  :root {
+    --green: #25D366; --green-dark: #128C7E; --green-light: #DCF8C6;
+    --bg: #f0f2f5; --white: #ffffff; --text: #1a1a2e; --text-light: #667085;
+    --border: #e4e7ec; --accent: #075E54; --danger: #ef4444; --warning: #f59e0b;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08); --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Baloo 2', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--green-dark) 60%, var(--green) 100%);
+    padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+    height: 64px; box-shadow: 0 2px 16px rgba(7,94,84,0.3); position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .header h1 { color: white; font-size: 20px; font-weight: 800; }
+  .header h1 span { color: var(--green-light); }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .stat-pill {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+    padding: 5px 13px; border-radius: 20px; color: white; font-size: 13px; font-weight: 600;
+  }
+  .logout-btn {
+    padding: 6px 12px; border-radius: 18px; border: 1.5px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+  .wa-status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .wa-status.connected { background: rgba(37,211,102,0.2); border: 1.5px solid var(--green); color: white; }
+  .wa-status.disconnected { background: rgba(239,68,68,0.2); border: 1.5px solid #ef4444; color: white; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .connected .status-dot { background: var(--green); animation: blink 1.5s infinite; }
+  .disconnected .status-dot { background: #ef4444; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .main { padding: 20px; display: grid; gap: 16px; grid-template-columns: 1fr; }
+  .section { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+  .section h2 { font-size: 16px; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .form-group label { font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select {
+    padding: 10px 13px; border: 2px solid var(--border); border-radius: 10px;
+    font-family: 'Baloo 2', sans-serif; font-size: 14px; color: var(--text);
+    transition: all 0.2s; background: var(--bg); outline: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--green); background: white; }
+  .btn {
+    padding: 10px 14px; background: var(--green-dark); color: white; border: none; border-radius: 10px;
+    cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.2s;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn-danger { background: var(--danger); }
+  .btn-ghost { background: white; color: var(--text-light); border: 2px solid var(--border); }
+
+  .grid { display: grid; gap: 10px; }
+  .lead-card, .user-card {
+    padding: 12px; border: 2px solid var(--border); border-radius: 12px; background: white;
+    display: grid; gap: 8px;
+  }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .muted { color: var(--text-light); font-size: 12px; }
+
+  /* LOGIN */
+  .login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 500; }
+  .login-overlay.show { display: flex; }
+  .login-box { background: white; padding: 28px; border-radius: 16px; width: 360px; max-width: 90vw; box-shadow: var(--shadow-lg); }
+  .login-box h2 { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 12px; text-align: center; }
+  .login-error { color: var(--danger); font-size: 12px; margin-top: 8px; text-align: center; min-height: 16px; }
+
+  /* QR */
+  .qr-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300;
+    align-items: center; justify-content: center; backdrop-filter: blur(6px);
+  }
+  .qr-overlay.show { display: flex; }
+  .qr-box {
+    background: white; border-radius: 24px; padding: 36px;
+    text-align: center; max-width: 380px; width: 90%;
+    box-shadow: var(--shadow-lg); animation: popIn 0.3s ease;
+  }
+  @keyframes popIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+  #qrCanvas { border-radius: 12px; border: 3px solid var(--green-light); }
+
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--accent); color:white; padding:13px 18px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:var(--shadow-lg); z-index:999; transform:translateY(100px); opacity:0; transition:all 0.3s; }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.success { background:var(--green-dark); }
+  .toast.error { background:var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@example.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••">
+    </div>
+    <button class="btn" onclick="login()">Login</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">A</div>
+    <h1>Admin <span>Panel</span></h1>
+  </div>
+  <div class="header-actions">
+    <div class="stat-pill" id="userPill" style="display:none">User: <span id="userName">-</span></div>
+    <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
+    <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
+      <div class="status-dot"></div>
+      <span id="waStatusText">WhatsApp Connect</span>
+    </div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="qr-overlay" id="qrOverlay">
+  <div class="qr-box" id="qrBox">
+    <h2>WhatsApp Connect</h2>
+    <p class="muted">QR scan karke WhatsApp connect karo</p>
+    <canvas id="qrCanvas"></canvas>
+    <div style="margin-top:12px">
+      <button class="btn" onclick="closeQR()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="section">
+    <h2>Assignment Rule</h2>
+    <div class="row">
+      <div class="form-group" style="min-width:220px">
+        <label>Rule</label>
+        <select id="assignmentRule">
+          <option value="manual">Manual</option>
+          <option value="auto">Auto (Round Robin)</option>
+          <option value="random">Random</option>
+        </select>
+      </div>
+      <button class="btn" onclick="saveRule()">Save</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Unassigned Leads</h2>
+    <div id="unassignedList" class="grid"></div>
+  </div>
+
+  <div class="section">
+    <h2>Users</h2>
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px">
+      <div>
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="newUserName" placeholder="Agent name">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="newUserEmail" placeholder="agent@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="newUserPassword" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="newUserRole">
+            <option value="agent">Agent</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button class="btn" onclick="createUser()">Create User</button>
+      </div>
+      <div>
+        <div id="usersList" class="grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let customers = [];
+let agents = [];
+let users = [];
+let ws = null;
+let wsConnected = false;
+let waReady = false;
+let currentUser = null;
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function showLogin(show) {
+  const overlay = document.getElementById('loginOverlay');
+  overlay.classList.toggle('show', !!show);
+}
+
+function applyUserUI() {
+  const userPill = document.getElementById('userPill');
+  const userName = document.getElementById('userName');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (currentUser) {
+    userPill.style.display = 'inline-flex';
+    logoutBtn.style.display = 'inline-flex';
+    userName.textContent = currentUser.name + ' (' + currentUser.role + ')';
+  }
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user.role !== 'admin') {
+        showToast('Admin login required', 'error');
+        showLogin(true);
+        return;
+      }
+      currentUser = data.user;
+      applyUserUI();
+      showLogin(false);
+      startApp();
+      return;
+    }
+  } catch(e) {}
+  showLogin(true);
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.textContent = '';
+  if (!email || !password) {
+    err.textContent = 'Email aur password zaruri hai';
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.success && data.user.role === 'admin') {
+      currentUser = data.user;
+      applyUserUI();
+      showLogin(false);
+      startApp();
+    } else {
+      err.textContent = data.error || 'Login failed';
+    }
+  } catch(e) {
+    err.textContent = 'Server error';
+  }
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  location.reload();
+}
+
+function connectWS() {
+  ws = new WebSocket('ws://localhost:3000');
+  ws.onopen = () => { wsConnected = true; };
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'init') {
+      customers = data.customers || [];
+      renderUnassigned();
+    } else if (data.type === 'new_customer') {
+      customers.unshift(data.customer);
+      renderUnassigned();
+    } else if (data.type === 'update_customer') {
+      const idx = customers.findIndex(c => c.id === data.customer.id);
+      if (idx !== -1) customers[idx] = data.customer;
+      renderUnassigned();
+    } else if (data.type === 'delete_customer') {
+      customers = customers.filter(c => c.id !== data.id);
+      renderUnassigned();
+    } else if (data.type === 'qr') {
+      showQRCode(data.qr);
+    } else if (data.type === 'ready') {
+      waReady = true;
+      updateWAStatus(true);
+      closeQR();
+      showToast('WhatsApp connected', 'success');
+    } else if (data.type === 'disconnected') {
+      waReady = false;
+      updateWAStatus(false);
+      showToast('WhatsApp disconnected', 'error');
+    }
+  };
+  ws.onclose = () => { wsConnected = false; setTimeout(connectWS, 3000); };
+  ws.onerror = () => { showToast('Server connection error', 'error'); };
+}
+
+async function loadUsers() {
+  const res = await fetch('/api/admin/users');
+  users = await res.json();
+  agents = users.filter(u => u.role === 'agent' && u.active);
+  renderUsers();
+  renderUnassigned();
+}
+
+async function loadSettings() {
+  const res = await fetch('/api/admin/settings');
+  if (!res.ok) return;
+  const data = await res.json();
+  document.getElementById('assignmentRule').value = data.assignment_rule || 'manual';
+}
+
+async function saveRule() {
+  const rule = document.getElementById('assignmentRule').value;
+  const res = await fetch('/api/admin/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignment_rule: rule })
+  });
+  if (res.ok) showToast('Rule updated', 'success');
+}
+
+async function createUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  const email = document.getElementById('newUserEmail').value.trim();
+  const password = document.getElementById('newUserPassword').value;
+  const role = document.getElementById('newUserRole').value;
+  if (!name || !email || !password) {
+    showToast('All fields required', 'error');
+    return;
+  }
+  const res = await fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password, role })
+  });
+  const data = await res.json();
+  if (data.success) {
+    showToast('User created', 'success');
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserEmail').value = '';
+    document.getElementById('newUserPassword').value = '';
+    await loadUsers();
+  } else {
+    showToast(data.error || 'Create failed', 'error');
+  }
+}
+
+async function toggleActive(userId, active) {
+  const res = await fetch(`/api/admin/users/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active: !active })
+  });
+  if (res.ok) {
+    await loadUsers();
+  }
+}
+
+async function assignLead(customerId, userId) {
+  if (!userId) return;
+  const res = await fetch('/api/admin/assign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customerId, userId })
+  });
+  if (res.ok) {
+    showToast('Assigned', 'success');
+  }
+}
+
+function renderUsers() {
+  const list = document.getElementById('usersList');
+  list.innerHTML = users.map(u => `
+    <div class="user-card">
+      <div><strong>${u.name}</strong> <span class="muted">(${u.role})</span></div>
+      <div class="muted">${u.email}</div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="toggleActive(${u.id}, ${u.active})">
+          ${u.active ? 'Deactivate' : 'Activate'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderUnassigned() {
+  const list = document.getElementById('unassignedList');
+  const unassigned = customers.filter(c => !c.assigned_user_id);
+  if (unassigned.length === 0) {
+    list.innerHTML = '<div class="muted">No unassigned leads</div>';
+    return;
+  }
+  list.innerHTML = unassigned.map(c => `
+    <div class="lead-card">
+      <div><strong>${c.name}</strong> <span class="muted">${c.phone}</span></div>
+      ${c.lastMessage ? `<div class="muted">Last: ${c.lastMessage}</div>` : ''}
+      <div class="row">
+        <select onchange="assignLead(${c.id}, this.value)">
+          <option value="">Assign to...</option>
+          ${agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateWAStatus(ready) {
+  waReady = ready;
+  const btn = document.getElementById('waStatusBtn');
+  const txt = document.getElementById('waStatusText');
+  btn.className = 'wa-status ' + (ready ? 'connected' : 'disconnected');
+  txt.textContent = ready ? 'WhatsApp Connected' : 'WhatsApp Connect';
+}
+
+async function loadWhatsAppStatus() {
+  try {
+    const res = await fetch('/api/whatsapp/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    updateWAStatus(!!data.ready);
+    if (data.qr) showQRCode(data.qr);
+  } catch(e) {}
+}
+
+function toggleQR() {
+  document.getElementById('qrOverlay').classList.add('show');
+  renderQRFromServer();
+  if (wsConnected) {
+    ws.send(JSON.stringify({ type: 'get_qr' }));
+  }
+}
+
+function closeQR() {
+  document.getElementById('qrOverlay').classList.remove('show');
+}
+
+async function showQRCode(qrString) {
+  document.getElementById('qrOverlay').classList.add('show');
+  const canvas = document.getElementById('qrCanvas');
+  if (window.QRCode && QRCode.toCanvas) {
+    try {
+      await QRCode.toCanvas(canvas, qrString, {
+        width: 220, margin: 2,
+        color: { dark: '#075E54', light: '#ffffff' }
+      });
+      return;
+    } catch(e) {}
+  }
+  await renderQRFromServer();
+}
+
+async function renderQRFromServer() {
+  const canvas = document.getElementById('qrCanvas');
+  try {
+    const res = await fetch('/api/whatsapp/qr-image');
+    const data = await res.json();
+    if (data && data.dataUrl) {
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = data.dataUrl;
+    }
+  } catch(e) {}
+}
+
+function startApp() {
+  connectWS();
+  loadUsers();
+  loadSettings();
+  loadWhatsAppStatus();
+}
+
+checkAuth();
+</script>
+</body>
+</html>
