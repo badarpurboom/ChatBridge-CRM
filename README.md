@@ -1,4 +1,5 @@
-# My Business CRM - WhatsApp Connected
+# ChatBridge-CRM
+WhatsApp-connected CRM for small teams and fast follow-ups.
 
 ## Setup (Step by Step)
 
