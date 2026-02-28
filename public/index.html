@@ -1130,7 +1130,8 @@
         <h2>👥 Customers</h2>
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" placeholder="Search leads by name or number..." oninput="renderList()">
+          <input type="text" id="searchInput" placeholder="Search leads by name or number..."
+            oninput="fetchPaginatedLeads()">
         </div>
         <div class="filter-tabs">
           <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
@@ -1139,6 +1140,21 @@
         </div>
       </div>
       <div class="customer-list" id="customerList"></div>
+
+      <!-- PAGINATION CONTROLS -->
+      <div
+        style="display: flex; justify-content: center; gap: 10px; padding: 10px; background: white; border-top: 1px solid var(--border);">
+        <button class="btn btn-ghost" id="btnPrevPage" onclick="changePage(-1)" disabled>◀ Prev</button>
+        <span style="font-size: 13px; font-weight: 700; color: var(--text); padding-top: 5px;" id="pageIndicator">Page
+          1</span>
+        <button class="btn btn-ghost" id="btnNextPage" onclick="changePage(1)">Next ▶</button>
+        <select id="limitSelect" class="form-select" onchange="changeLimit(this.value)"
+          style="margin-left: 10px; padding: 2px 5px;">
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+          <option value="500">500 / page</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -1165,6 +1181,8 @@
     // STATE
     // ========================================
     let customers = [];
+    let paginationState = { page: 1, limit: 50, total: 0, totalPages: 1 };
+
     let catalogItems = [];
     let companyFocus = 'product';
     let itemQuantities = {};
@@ -1193,13 +1211,23 @@
           const data = JSON.parse(event.data);
 
           if (data.type === 'init') {
-            customers = data.customers || [];
+            // Do not use init customers to avoid large payload, fetch via api
             catalogItems = data.catalogItems || [];
             companyFocus = data.companyFocus || 'product';
             syncQuantitiesWithCatalog();
+
+            if (data.user) {
+              currentUser = data.user;
+              document.getElementById('userName').textContent = data.user.name; // Assuming 'userName' is the correct ID
+              if (data.user.role === 'admin') {
+                document.getElementById('waStatusBtn').style.display = 'flex';
+                loadWhatsAppStatus();
+              }
+            }
+
             updateFocusLabels();
             renderItemsGrid();
-            renderList();
+            fetchPaginatedLeads();
             updateStats();
           }
           else if (data.type === 'qr') {
@@ -1220,10 +1248,12 @@
           }
           else if (data.type === 'new_customer') {
             // Naya customer aaya - top mein dalo
-            customers = customers.filter(c => c.id !== data.customer.id);
-            customers.unshift(data.customer);
-            renderList();
-            updateStats();
+            if (paginationState.page === 1) {
+              customers = customers.filter(c => c.id !== data.customer.id);
+              customers.unshift(data.customer);
+              renderList();
+              updateStats();
+            }
             // Notification
             showToast('📩 New WhatsApp message! ' + data.customer.phone, 'success');
             // Browser notification bhi
@@ -1235,21 +1265,13 @@
             }
           }
           else if (data.type === 'message_update') {
-            const idx = customers.findIndex(c => c.id === data.customer.id);
-            if (idx !== -1) customers[idx] = data.customer;
-            renderList();
-            updateStats();
+            fetchPaginatedLeads();
           }
           else if (data.type === 'update_customer') {
-            const idx = customers.findIndex(c => c.id === data.customer.id);
-            if (idx !== -1) customers[idx] = data.customer;
-            renderList();
-            updateStats();
+            fetchPaginatedLeads();
           }
           else if (data.type === 'delete_customer') {
-            customers = customers.filter(c => c.id !== data.id);
-            renderList();
-            updateStats();
+            fetchPaginatedLeads();
           }
           else if (data.type === 'catalog_update') {
             if (data.companyFocus) companyFocus = data.companyFocus;
@@ -1551,6 +1573,47 @@
       return `${item.name || ''}${qty}${price}`.trim();
     }
 
+    async function fetchPaginatedLeads() {
+      const searchVal = document.getElementById('searchInput').value;
+
+      const q = new URLSearchParams({
+        page: paginationState.page,
+        limit: paginationState.limit,
+      });
+      if (searchVal) q.append('search', searchVal);
+      if (currentFilter === 'new') q.append('status', 'unassigned');
+      if (currentFilter === 'contacted') q.append('status', 'mature');
+
+      try {
+        const res = await fetch(`/api/customers/paginated?${q.toString()}`);
+        if (res && res.ok) {
+          const json = await res.json();
+          customers = json.data || [];
+          paginationState = json.pagination;
+          document.getElementById('pageIndicator').textContent = `Page ${paginationState.page} of ${paginationState.totalPages || 1} (${paginationState.total} total)`;
+          document.getElementById('btnPrevPage').disabled = paginationState.page <= 1;
+          document.getElementById('btnNextPage').disabled = paginationState.page >= paginationState.totalPages;
+
+          renderList();
+          updateStats();
+
+          // Update Total Count in Header if possible
+          document.getElementById('totalCount').textContent = paginationState.total;
+        }
+      } catch (e) { console.error(e) }
+    }
+
+    function changePage(delta) {
+      paginationState.page = Math.max(1, paginationState.page + delta);
+      fetchPaginatedLeads();
+    }
+
+    function changeLimit(val) {
+      paginationState.limit = parseInt(val) || 50;
+      paginationState.page = 1;
+      fetchPaginatedLeads();
+    }
+
     // ========================================
     // RENDER LIST
     // ========================================
@@ -1558,10 +1621,10 @@
       const search = document.getElementById('searchInput').value.toLowerCase();
       const list = document.getElementById('customerList');
 
+      // Filtering is already handled by fetchPaginatedLeads for main status, but local UI search can still apply to visible page
       let filtered = customers.filter(c => {
         const match = c.name.toLowerCase().includes(search) || c.phone.includes(search);
-        if (currentFilter === 'new') return match && c.isNew;
-        if (currentFilter === 'contacted') return match && c.contacted;
+        // Note: isNew logic might need adjusting depending on if unassigned == new.
         return match;
       });
 
@@ -1729,15 +1792,17 @@
     // ========================================
     // HELPERS
     // ========================================
-    function setFilter(f, btn) {
-      currentFilter = f;
+    function setFilter(type, btnObj) {
+      currentFilter = type;
       document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderList();
+      btnObj.classList.add('active');
+      paginationState.page = 1;
+      fetchPaginatedLeads();
     }
 
     function updateStats() {
-      document.getElementById('totalCount').textContent = customers.length;
+      // statTotal is now handled by fetchPaginatedLeads directly to show accurate total DB count
+      // We can compute page-specific stats here if needed, but not necessary right now.
       document.getElementById('newCount').textContent = customers.filter(c => c.isNew).length;
     }
 

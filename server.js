@@ -542,6 +542,75 @@ async function getCustomersForUser(user) {
   return rows.map(mapCustomer);
 }
 
+// Support Pagination Fetch
+async function getPaginatedCustomers(user, options = {}) {
+  const page = Math.max(1, parseInt(options.page) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(options.limit) || 50));
+  const offset = (page - 1) * limit;
+
+  let whereClauses = [];
+  let params = [];
+
+  // Agent filtering (Role based)
+  if (user.role !== 'admin') {
+    whereClauses.push('assigned_user_id = ?');
+    params.push(user.id);
+  } else if (options.agentId && options.agentId !== 'all') {
+    whereClauses.push('assigned_user_id = ?');
+    params.push(parseInt(options.agentId));
+  }
+
+  // Status filtering
+  if (options.status === 'unassigned') {
+    whereClauses.push('(assigned_user_id IS NULL OR assigned_user_id = "")');
+  } else if (options.status === 'assigned') {
+    whereClauses.push('assigned_user_id IS NOT NULL');
+    whereClauses.push('(mature IS NULL OR mature = 0)');
+  } else if (options.status === 'mature') {
+    whereClauses.push('mature = 1');
+  }
+
+  // Search filtering
+  if (options.search) {
+    const searchStr = '%' + String(options.search).trim() + '%';
+    whereClauses.push('(name LIKE ? OR phone LIKE ?)');
+    params.push(searchStr, searchStr);
+  }
+
+  // Date filtering
+  if (options.date) {
+    // Exact match for the ISO date string format (YYYY-MM-DD or DD/MM/YYYY variation depending on locale usage)
+    const dateStr = '%' + String(options.date).trim() + '%';
+    whereClauses.push('(assigned_at LIKE ? OR time LIKE ?)');
+    params.push(dateStr, dateStr);
+  }
+
+  const whereSql = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+  // Get total count
+  const countSql = `SELECT COUNT(*) as total FROM customers ${whereSql}`;
+  const countRow = await db.get(countSql, params);
+  const total = countRow ? countRow.total : 0;
+
+  // Get paginated rows
+  const fetchSql = `SELECT * FROM customers ${whereSql} ORDER BY id DESC LIMIT ? OFFSET ?`;
+  const rows = await db.all(fetchSql, [...params, limit, offset]);
+
+  // Aggregate stats (could be optimized with a single query, but doing it simpler here or via separate query)
+  // To avoid Heavy querying, we might just return the paginated list and rely on a separate stats endpoint if needed, 
+  // but for now let's just return the list.
+
+  return {
+    data: rows.map(mapCustomer),
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
+}
+
 async function getActiveAgents() {
   return db.all(
     "SELECT id, name, email FROM users WHERE role = 'agent' AND active = 1 ORDER BY id ASC"
@@ -666,10 +735,10 @@ wss.on('connection', async (ws, req) => {
   const user = req.session.user;
   ws.user = user;
   console.log('[WS] Connected:', user.email, user.role);
-  const customers = await getCustomersForUser(user);
+  // Do NOT send all customers on WS init to save memory/bandwidth. Frontend will fetch via API.
   const companyFocus = await getCompanyFocus();
   const catalogItems = await getCatalogItems(companyFocus);
-  sendWS(ws, { type: 'init', customers, catalogItems, companyFocus, user });
+  sendWS(ws, { type: 'init', catalogItems, companyFocus, user });
   if (user.role === 'admin' && qrCodeData) {
     sendWS(ws, { type: 'qr', qr: qrCodeData });
   }
@@ -750,7 +819,7 @@ client.on('message', async (msg) => {
       await db.run(
         `UPDATE customers
          SET lastMessage = ?, lastMessageTime = ?, messageCount = ?, isNew = 1, assigned_user_id = ?
-         WHERE id = ?`,
+    WHERE id = ? `,
         [messageText, time, messageCount, assignedId, existing.id]
       );
       const updated = await db.get('SELECT * FROM customers WHERE id = ?', [existing.id]);
@@ -761,7 +830,7 @@ client.on('message', async (msg) => {
           fromUserId: prevAssignedId,
           toUserId: assignedId,
           actorUserId: null,
-          note: `rule:${rule}`
+          note: `rule:${rule} `
         });
       }
       broadcastCustomerUpdate(mapCustomer(updated), prevAssignedId);
@@ -770,9 +839,9 @@ client.on('message', async (msg) => {
       const now = new Date().toISOString();
       const result = await db.run(
         `INSERT INTO customers
-         (phone, name, address, note, items_json, selected_items_json, selection_type,
-          time, lastMessage, lastMessageTime, messageCount, isNew, contacted, source, assigned_user_id, assigned_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (phone, name, address, note, items_json, selected_items_json, selection_type,
+      time, lastMessage, lastMessageTime, messageCount, isNew, contacted, source, assigned_user_id, assigned_at)
+  VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           phone,
           'Unknown (WhatsApp)',
@@ -800,7 +869,7 @@ client.on('message', async (msg) => {
           fromUserId: null,
           toUserId: assignedId,
           actorUserId: null,
-          note: `rule:${rule}`
+          note: `rule:${rule} `
         });
       }
       broadcastCustomerNew(mapCustomer(created));
@@ -1056,16 +1125,16 @@ app.post('/api/admin/assign-bulk', requireAdmin, async (req, res) => {
   if (ids.length === 0) return res.status(400).json({ error: 'Invalid customer IDs' });
 
   const placeholders = ids.map(() => '?').join(',');
-  const existing = await db.all(`SELECT * FROM customers WHERE id IN (${placeholders})`, ids);
+  const existing = await db.all(`SELECT * FROM customers WHERE id IN(${placeholders})`, ids);
   if (existing.length === 0) return res.status(404).json({ error: 'Customers not found' });
 
   const now = new Date().toISOString();
   await db.run(
-    `UPDATE customers SET assigned_user_id = ?, isNew = 1, assigned_at = ? WHERE id IN (${placeholders})`,
+    `UPDATE customers SET assigned_user_id = ?, isNew = 1, assigned_at = ? WHERE id IN(${placeholders})`,
     [agent.id, now, ...ids]
   );
 
-  const updatedRows = await db.all(`SELECT * FROM customers WHERE id IN (${placeholders})`, ids);
+  const updatedRows = await db.all(`SELECT * FROM customers WHERE id IN(${placeholders})`, ids);
   const updatedMap = new Map(updatedRows.map(r => [r.id, r]));
   for (const row of existing) {
     const updated = updatedMap.get(row.id);
@@ -1096,12 +1165,12 @@ app.post('/api/admin/delete-bulk', requireAdmin, async (req, res) => {
   try {
     const placeholders = customerIds.map(() => '?').join(',');
     const leadsToDelete = await db.all(
-      `SELECT id, assigned_user_id FROM customers WHERE id IN (${placeholders})`,
+      `SELECT id, assigned_user_id FROM customers WHERE id IN(${placeholders})`,
       customerIds
     );
 
     await db.run(
-      `DELETE FROM customers WHERE id IN (${placeholders})`,
+      `DELETE FROM customers WHERE id IN(${placeholders})`,
       customerIds
     );
 
@@ -1145,14 +1214,14 @@ app.get('/api/admin/lead-audit', requireAdmin, async (req, res) => {
   const customerId = parseInt(req.query.customerId, 10);
   if (!customerId) return res.status(400).json({ error: 'customerId required' });
   const rows = await db.all(
-    `SELECT la.*, 
-            uf.name AS from_name, ut.name AS to_name, ua.name AS actor_name
+    `SELECT la.*,
+    uf.name AS from_name, ut.name AS to_name, ua.name AS actor_name
      FROM lead_audit la
      LEFT JOIN users uf ON uf.id = la.from_user_id
      LEFT JOIN users ut ON ut.id = la.to_user_id
      LEFT JOIN users ua ON ua.id = la.actor_user_id
      WHERE la.customer_id = ?
-     ORDER BY la.id DESC`,
+    ORDER BY la.id DESC`,
     [customerId]
   );
   res.json(rows);
@@ -1201,7 +1270,7 @@ app.post('/api/admin/cleanup-leads', requireAdmin, async (req, res) => {
 
     if (leadsToDelete.length > 0) {
       const ids = leadsToDelete.map(l => l.id);
-      await db.run(`DELETE FROM customers WHERE id IN (${ids.map(() => '?').join(',')})`, ids);
+      await db.run(`DELETE FROM customers WHERE id IN(${ids.map(() => '?').join(',')})`, ids);
 
       for (const lead of leadsToDelete) {
         broadcastCustomerDelete(lead.id, lead.assigned_user_id);
@@ -1220,6 +1289,16 @@ app.post('/api/admin/cleanup-leads', requireAdmin, async (req, res) => {
 app.get('/api/customers', requireAuth, async (req, res) => {
   const customers = await getCustomersForUser(req.session.user);
   res.json(customers);
+});
+
+app.get('/api/customers/paginated', requireAuth, async (req, res) => {
+  try {
+    const result = await getPaginatedCustomers(req.session.user, req.query);
+    res.json(result);
+  } catch (err) {
+    console.error('Pagination error:', err);
+    res.status(500).json({ error: 'Failed to fetch paginated customers' });
+  }
 });
 
 app.post('/api/customers', requireAuth, async (req, res) => {
@@ -1249,7 +1328,7 @@ app.post('/api/customers', requireAuth, async (req, res) => {
       await db.run(
         `UPDATE customers
          SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, assigned_user_id = ?
-         WHERE id = ?`,
+    WHERE id = ? `,
         [
           body.name ?? existing.name,
           body.address ?? existing.address,
@@ -1290,7 +1369,7 @@ app.post('/api/customers', requireAuth, async (req, res) => {
     await db.run(
       `UPDATE customers
        SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, assigned_user_id = ?
-       WHERE id = ?`,
+    WHERE id = ? `,
       [
         body.name ?? existing.name,
         body.address ?? existing.address,
@@ -1333,9 +1412,9 @@ app.post('/api/customers', requireAuth, async (req, res) => {
   const now = new Date().toISOString();
   const result = await db.run(
     `INSERT INTO customers
-     (phone, name, address, note, items_json, selected_items_json, selection_type,
+    (phone, name, address, note, items_json, selected_items_json, selection_type,
       time, lastMessage, lastMessageTime, messageCount, isNew, contacted, source, assigned_user_id, assigned_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       phone,
       body.name,
@@ -1432,9 +1511,9 @@ app.put('/api/customers/:id', requireAuth, async (req, res) => {
   await db.run(
     `UPDATE customers
      SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, isNew = ?, contacted = ?,
-         lastMessage = ?, lastMessageTime = ?, messageCount = ?, assigned_user_id = ?, 
-         assigned_at = CASE WHEN assigned_user_id != ? THEN ? ELSE assigned_at END
-     WHERE id = ?`,
+    lastMessage = ?, lastMessageTime = ?, messageCount = ?, assigned_user_id = ?,
+    assigned_at = CASE WHEN assigned_user_id != ? THEN ? ELSE assigned_at END
+     WHERE id = ? `,
     [
       updated.name,
       updated.address,
@@ -1588,7 +1667,7 @@ app.post('/api/whatsapp/send', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const chatId = phone.includes('@c.us') ? phone : `${phone}@c.us`;
+    const chatId = phone.includes('@c.us') ? phone : `${phone} @c.us`;
     await client.sendMessage(chatId, message);
     if (customer) {
       await db.run('UPDATE customers SET contacted = 1, isNew = 0 WHERE id = ?', [customer.id]);
