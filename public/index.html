@@ -1,649 +1,1584 @@
 <!DOCTYPE html>
 <html lang="hi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Business CRM</title>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<style>
-  :root {
-    --green: #25D366; --green-dark: #128C7E; --green-light: #DCF8C6;
-    --bg: #f0f2f5; --white: #ffffff; --text: #1a1a2e; --text-light: #667085;
-    --border: #e4e7ec; --accent: #075E54; --danger: #ef4444; --warning: #f59e0b;
-    --shadow: 0 4px 24px rgba(0,0,0,0.08); --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Baloo 2', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Business CRM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    :root {
+      --green: #25D366;
+      --green-dark: #128C7E;
+      --green-light: #DCF8C6;
+      --bg: #f0f2f5;
+      --white: #ffffff;
+      --text: #1a1a2e;
+      --text-light: #667085;
+      --border: #e4e7ec;
+      --accent: #075E54;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.14);
+    }
 
-  /* HEADER */
-  .header {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--green-dark) 60%, var(--green) 100%);
-    padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
-    height: 64px; box-shadow: 0 2px 16px rgba(7,94,84,0.3); position: sticky; top: 0; z-index: 100;
-  }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .header h1 { color: white; font-size: 20px; font-weight: 800; }
-  .header h1 span { color: var(--green-light); }
-  .header-stats { display: flex; gap: 12px; align-items: center; }
-  .stat-pill {
-    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-    padding: 5px 13px; border-radius: 20px; color: white; font-size: 13px; font-weight: 600;
-  }
-  .stat-pill span { color: var(--green-light); }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-  /* WA STATUS */
-  .wa-status {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .wa-status.connected { background: rgba(37,211,102,0.2); border: 1.5px solid var(--green); color: white; }
-  .wa-status.disconnected { background: rgba(239,68,68,0.2); border: 1.5px solid #ef4444; color: white; }
-  .wa-status.waiting { background: rgba(245,158,11,0.2); border: 1.5px solid var(--warning); color: white; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .connected .status-dot { background: var(--green); animation: blink 1.5s infinite; }
-  .disconnected .status-dot { background: #ef4444; }
-  .waiting .status-dot { background: var(--warning); animation: blink 1s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    body {
+      font-family: 'Baloo 2', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-  /* QR MODAL */
-  .qr-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7); z-index: 300;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(6px);
-  }
-  .qr-overlay.show { display: flex; }
-  .qr-box {
-    background: white; border-radius: 24px; padding: 36px;
-    text-align: center; max-width: 380px; width: 90%;
-    box-shadow: var(--shadow-lg); animation: popIn 0.3s ease;
-  }
-  @keyframes popIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
-  .qr-box h2 { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
-  .qr-box p { font-size: 13px; color: var(--text-light); margin-bottom: 20px; line-height: 1.6; }
-  #qrCanvas { border-radius: 12px; border: 3px solid var(--green-light); }
-  .qr-steps { text-align: left; margin-top: 20px; background: #f0fff4; border-radius: 12px; padding: 14px 16px; }
-  .qr-steps p { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
-  .qr-steps li { font-size: 12px; color: var(--text); margin: 4px 0; list-style: none; }
-  .qr-steps li::before { content: "👉 "; }
-  .qr-connected { padding: 30px; }
-  .qr-connected .big-check { font-size: 60px; margin-bottom: 10px; }
-  .qr-connected h3 { font-size: 20px; font-weight: 800; color: var(--green-dark); }
-  .btn-close-qr {
-    margin-top: 16px; padding: 10px 24px; background: var(--green);
-    color: white; border: none; border-radius: 10px; font-family: 'Baloo 2', sans-serif;
-    font-size: 15px; font-weight: 700; cursor: pointer;
-  }
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--green-dark) 60%, var(--green) 100%);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      box-shadow: 0 2px 16px rgba(7, 94, 84, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-  /* MAIN LAYOUT */
-  .main { display: grid; grid-template-columns: 380px 1fr; height: calc(100vh - 64px); }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-  /* LEFT PANEL */
-  .left-panel {
-    background: white; border-right: 2px solid var(--border);
-    overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;
-  }
-  .panel-title { font-size: 15px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-group label { font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
-  .form-group input, .form-group textarea {
-    padding: 10px 13px; border: 2px solid var(--border); border-radius: 10px;
-    font-family: 'Baloo 2', sans-serif; font-size: 14px; color: var(--text);
-    transition: all 0.2s; background: var(--bg); outline: none;
-  }
-  .form-group input:focus, .form-group textarea:focus { border-color: var(--green); background: white; box-shadow: 0 0 0 3px rgba(37,211,102,0.1); }
-  .form-group textarea { resize: vertical; min-height: 65px; }
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
 
-  .items-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 180px; overflow-y: auto; }
-  .item-chip {
-    padding: 7px 8px; border: 2px solid var(--border); border-radius: 8px;
-    cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
-    text-align: center; background: var(--bg); user-select: none;
-  }
-  .item-chip:hover { border-color: var(--green); background: #f0fff4; }
-  .item-chip.selected { border-color: var(--green); background: var(--green-light); color: var(--accent); font-weight: 700; }
+    .header h1 {
+      color: white;
+      font-size: 20px;
+      font-weight: 800;
+    }
 
-  .custom-item-row { display: flex; gap: 8px; }
-  .custom-item-row input { flex: 1; }
-  .btn-add-item { padding: 10px 14px; background: var(--green-dark); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; transition: all 0.2s; }
-  .btn-add-item:hover { background: var(--accent); }
+    .header h1 span {
+      color: var(--green-light);
+    }
 
-  .btn-submit {
-    width: 100%; padding: 13px; background: linear-gradient(135deg, var(--green-dark), var(--green));
-    color: white; border: none; border-radius: 12px; font-family: 'Baloo 2', sans-serif;
-    font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.25s;
-    box-shadow: 0 4px 16px rgba(37,211,102,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,211,102,0.4); }
+    .header-stats {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
 
-  /* RIGHT PANEL */
-  .right-panel { display: flex; flex-direction: column; overflow: hidden; }
-  .right-header {
-    padding: 16px 20px; background: white; border-bottom: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  }
-  .right-header h2 { font-size: 17px; font-weight: 800; color: var(--accent); white-space: nowrap; }
-  .search-bar { flex: 1; min-width: 180px; max-width: 280px; position: relative; }
-  .search-bar input {
-    width: 100%; padding: 8px 12px 8px 34px; border: 2px solid var(--border); border-radius: 24px;
-    font-family: 'Baloo 2', sans-serif; font-size: 13px; outline: none; background: var(--bg); transition: all 0.2s;
-  }
-  .search-bar input:focus { border-color: var(--green); background: white; }
-  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; }
-  .filter-tabs { display: flex; gap: 5px; }
-  .filter-tab {
-    padding: 5px 12px; border-radius: 20px; border: 2px solid var(--border);
-    background: white; font-family: 'Baloo 2', sans-serif; font-size: 12px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; color: var(--text-light);
-  }
-  .filter-tab.active { background: var(--green); border-color: var(--green); color: white; }
+    .stat-pill {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 5px 13px;
+      border-radius: 20px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+    }
 
-  /* CUSTOMER LIST */
-  .customer-list { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-  .customer-card {
-    background: white; border-radius: 14px; padding: 14px; border: 2px solid var(--border);
-    transition: all 0.25s; animation: slideIn 0.3s ease; position: relative; overflow: hidden;
-  }
-  @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-  .customer-card:hover { border-color: var(--green); box-shadow: var(--shadow); transform: translateY(-1px); }
-  .customer-card.new-customer { border-color: var(--warning); background: #fffbf0; }
-  .customer-card.new-customer::before { content:''; position:absolute; left:0;top:0;bottom:0; width:4px; background:var(--warning); }
+    .stat-pill span {
+      color: var(--green-light);
+    }
 
-  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-  .card-left { display: flex; gap: 10px; align-items: flex-start; flex: 1; }
-  .avatar {
-    width: 42px; height: 42px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--green-dark), var(--green));
-    color: white; font-size: 17px; font-weight: 800;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .customer-info h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-  .customer-info .phone { font-size: 13px; color: var(--green-dark); font-weight: 600; margin-top: 2px; }
-  .customer-info .address { font-size: 12px; color: var(--text-light); margin-top: 2px; }
-  .customer-info .last-msg { font-size: 12px; color: #92400e; background: #fef3c7; padding: 2px 8px; border-radius: 6px; margin-top: 4px; display: inline-block; }
+    /* WA STATUS */
+    .wa-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
 
-  .card-actions { display: flex; gap: 5px; flex-shrink: 0; }
-  .btn-wa {
-    padding: 7px 12px; background: var(--green); color: white; border: none; border-radius: 8px;
-    cursor: pointer; font-family: 'Baloo 2', sans-serif; font-size: 12px; font-weight: 700;
-    transition: all 0.2s; display: flex; align-items: center; gap: 4px;
-  }
-  .btn-wa:hover { background: var(--green-dark); transform: scale(1.05); }
-  .btn-edit { padding: 7px 10px; background: #eff6ff; color: #3b82f6; border: 2px solid #bfdbfe; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-  .btn-edit:hover { background: #3b82f6; color: white; }
-  .btn-delete { padding: 7px 10px; background: #fef2f2; color: var(--danger); border: 2px solid #fecaca; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-  .btn-delete:hover { background: var(--danger); color: white; }
+    .wa-status.connected {
+      background: rgba(37, 211, 102, 0.2);
+      border: 1.5px solid var(--green);
+      color: white;
+    }
 
-  .items-row { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
-  .item-tag { padding: 2px 9px; background: #f0fff4; border: 1.5px solid #86efac; color: var(--accent); border-radius: 20px; font-size: 11px; font-weight: 600; }
-  .timestamp { font-size: 11px; color: var(--text-light); margin-top: 5px; }
+    .wa-status.disconnected {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1.5px solid #ef4444;
+      color: white;
+    }
 
-  .new-badge { display:inline-flex; align-items:center; background:#fef3c7; border:1.5px solid #f59e0b; color:#92400e; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; animation:pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-  .wa-badge { font-size:11px; background:#dcf8c6; padding:2px 7px; border-radius:10px; color:#128C7E; }
+    .wa-status.waiting {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1.5px solid var(--warning);
+      color: white;
+    }
 
-  .empty-state { text-align:center; padding:60px 20px; color:var(--text-light); }
-  .empty-state .icon { font-size:56px; margin-bottom:12px; }
-  .empty-state h3 { font-size:18px; font-weight:700; margin-bottom:8px; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
 
-  /* MESSAGE MODAL */
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-  .modal-overlay.show { display:flex; }
-  .modal { background:white; border-radius:20px; padding:26px; width:460px; max-width:90vw; box-shadow:var(--shadow-lg); animation:popIn 0.3s ease; }
-  .modal h3 { font-size:17px; font-weight:800; color:var(--accent); margin-bottom:12px; }
-  .modal textarea { width:100%; padding:12px; border:2px solid var(--border); border-radius:10px; font-family:'Baloo 2',sans-serif; font-size:14px; resize:vertical; min-height:110px; outline:none; }
-  .modal textarea:focus { border-color:var(--green); }
-  .modal-actions { display:flex; gap:10px; margin-top:12px; }
-  .btn-send-wa { flex:1; padding:12px; background:var(--green); color:white; border:none; border-radius:10px; font-family:'Baloo 2',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; }
-  .btn-send-wa:hover { background:var(--green-dark); }
-  .btn-send-wa.direct { background: linear-gradient(135deg,#075E54,#128C7E); }
-  .btn-cancel { padding:12px 18px; border:2px solid var(--border); background:white; border-radius:10px; font-family:'Baloo 2',sans-serif; font-size:14px; font-weight:600; cursor:pointer; color:var(--text-light); }
-  .btn-cancel:hover { border-color:var(--danger); color:var(--danger); }
+    .connected .status-dot {
+      background: var(--green);
+      animation: blink 1.5s infinite;
+    }
 
-  /* TOAST */
-  .toast { position:fixed; bottom:24px; right:24px; background:var(--accent); color:white; padding:13px 18px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:var(--shadow-lg); z-index:999; transform:translateY(100px); opacity:0; transition:all 0.3s; }
-  .toast.show { transform:translateY(0); opacity:1; }
-  .toast.success { background:var(--green-dark); }
-  .toast.error { background:var(--danger); }
+    .disconnected .status-dot {
+      background: #ef4444;
+    }
 
-  /* LOGIN */
-  .login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 500; }
-  .login-overlay.show { display: flex; }
-  .login-box { background: white; padding: 28px; border-radius: 16px; width: 360px; max-width: 90vw; box-shadow: var(--shadow-lg); }
-  .login-box h2 { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 12px; text-align: center; }
-  .login-error { color: var(--danger); font-size: 12px; margin-top: 8px; text-align: center; min-height: 16px; }
-  .logout-btn {
-    padding: 6px 12px; border-radius: 18px; border: 1.5px solid rgba(255,255,255,0.4);
-    background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 700; cursor: pointer;
-  }
-  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+    .waiting .status-dot {
+      background: var(--warning);
+      animation: blink 1s infinite;
+    }
 
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
-</style>
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    /* QR MODAL */
+    .qr-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+
+    .qr-overlay.show {
+      display: flex;
+    }
+
+    .qr-box {
+      background: white;
+      border-radius: 24px;
+      padding: 36px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.3s ease;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.85)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    .qr-box h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .qr-box p {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    #qrCanvas {
+      border-radius: 12px;
+      border: 3px solid var(--green-light);
+    }
+
+    .qr-steps {
+      text-align: left;
+      margin-top: 20px;
+      background: #f0fff4;
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .qr-steps p {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .qr-steps li {
+      font-size: 12px;
+      color: var(--text);
+      margin: 4px 0;
+      list-style: none;
+    }
+
+    .qr-steps li::before {
+      content: "👉 ";
+    }
+
+    .qr-connected {
+      padding: 30px;
+    }
+
+    .qr-connected .big-check {
+      font-size: 60px;
+      margin-bottom: 10px;
+    }
+
+    .qr-connected h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green-dark);
+    }
+
+    .btn-close-qr {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* MAIN LAYOUT */
+    .main {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      height: calc(100vh - 64px);
+    }
+
+    /* LEFT PANEL */
+    .left-panel {
+      background: white;
+      border-right: 2px solid var(--border);
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      padding: 10px 13px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      transition: all 0.2s;
+      background: var(--bg);
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: var(--green);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 65px;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .item-chip {
+      padding: 7px 8px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: default;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      background: var(--bg);
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .item-chip:hover {
+      border-color: var(--green);
+      background: #f0fff4;
+    }
+
+    .item-chip.selected {
+      border-color: var(--green);
+      background: var(--green-light);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .item-chip span {
+      flex: 1;
+      text-align: left;
+    }
+
+    .qty-input {
+      width: 56px;
+      padding: 4px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 12px;
+      background: white;
+      text-align: center;
+    }
+
+    .custom-item-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .custom-item-row input {
+      flex: 1;
+    }
+
+    .btn-add-item {
+      padding: 10px 14px;
+      background: var(--green-dark);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+
+    .btn-add-item:hover {
+      background: var(--accent);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+    }
+
+    .btn {
+      padding: 10px 14px;
+      background: var(--green-dark);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+    }
+
+    .btn-ghost {
+      background: white;
+      color: var(--text-light);
+      border: 2px solid var(--border);
+    }
+
+    /* RIGHT PANEL */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .right-header {
+      padding: 16px 20px;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .right-header h2 {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .search-bar {
+      flex: 1;
+      min-width: 180px;
+      max-width: 280px;
+      position: relative;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      border: 2px solid var(--border);
+      border-radius: 24px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 13px;
+      outline: none;
+      background: var(--bg);
+      transition: all 0.2s;
+    }
+
+    .search-bar input:focus {
+      border-color: var(--green);
+      background: white;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 5px;
+    }
+
+    .filter-tab {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      background: white;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-light);
+    }
+
+    .filter-tab.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+    }
+
+    /* CUSTOMER LIST */
+    .customer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-content: flex-start;
+    }
+
+    .customer-card {
+      background: #fffbc8;
+      /* sticky note yellow */
+      border-radius: 2px 14px 14px 14px;
+      padding: 14px;
+      border: 1px solid #fde047;
+      transition: all 0.25s;
+      animation: slideIn 0.3s ease;
+      position: relative;
+      overflow-y: auto;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+
+      /* STRICT FIXED SIZE */
+      width: 270px;
+      height: 270px;
+
+      box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.07);
+    }
+
+    .customer-card::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .customer-card::-webkit-scrollbar-thumb {
+      background: #fde047;
+      border-radius: 4px;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .customer-card:hover {
+      border-color: var(--green);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    .customer-card.new-customer {
+      border-color: #f59e0b;
+      background: #fef3c7;
+    }
+
+    .customer-card.contacted-customer {
+      border-color: #fca5a5;
+      background: #fee2e2;
+    }
+
+    .customer-card.mature-customer {
+      border-color: #86efac;
+      background: #dcfce7;
+      border-width: 2px;
+    }
+
+    .customer-card.new-customer::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--warning);
+    }
+
+    .card-top {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .card-left {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      color: white;
+      font-size: 17px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .customer-info {
+      min-width: 0;
+    }
+
+    .customer-info h3 {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .customer-info .phone {
+      font-size: 13px;
+      color: var(--green-dark);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .customer-info .address {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 2px;
+      word-break: break-word;
+    }
+
+    .customer-info .last-msg {
+      font-size: 12px;
+      color: #92400e;
+      background: #fef3c7;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-top: 4px;
+      display: inline-block;
+      word-break: break-word;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px dashed #d4d4d8;
+    }
+
+    .btn-wa {
+      padding: 6px 10px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-wa:hover {
+      background: var(--green-dark);
+      transform: scale(1.05);
+    }
+
+    .btn-edit {
+      padding: 6px 10px;
+      background: #eff6ff;
+      color: #3b82f6;
+      border: 2px solid #bfdbfe;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-edit:hover {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-delete {
+      padding: 6px 10px;
+      background: #fef2f2;
+      color: var(--danger);
+      border: 2px solid #fecaca;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-delete:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .items-row {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .item-tag {
+      padding: 2px 9px;
+      background: #f0fff4;
+      border: 1.5px solid #86efac;
+      color: var(--accent);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .timestamp {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 5px;
+    }
+
+    .new-badge {
+      display: inline-flex;
+      align-items: center;
+      background: #fef3c7;
+      border: 1.5px solid #f59e0b;
+      color: #92400e;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.5
+      }
+    }
+
+    .wa-badge {
+      font-size: 11px;
+      background: #dcf8c6;
+      padding: 2px 7px;
+      border-radius: 10px;
+      color: #128C7E;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+    }
+
+    .empty-state .icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    /* MESSAGE MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 20px;
+      padding: 26px;
+      width: 460px;
+      max-width: 90vw;
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.3s ease;
+    }
+
+    .modal h3 {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .modal textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 110px;
+      outline: none;
+    }
+
+    .modal textarea:focus {
+      border-color: var(--green);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn-send-wa {
+      flex: 1;
+      padding: 12px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-send-wa:hover {
+      background: var(--green-dark);
+    }
+
+    .btn-send-wa.direct {
+      background: linear-gradient(135deg, #075E54, #128C7E);
+    }
+
+    .btn-cancel {
+      padding: 12px 18px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 10px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-light);
+    }
+
+    .btn-cancel:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--accent);
+      color: white;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      z-index: 999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: var(--green-dark);
+    }
+
+    .toast.error {
+      background: var(--danger);
+    }
+
+    /* LOGIN */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+    }
+
+    .login-overlay.show {
+      display: flex;
+    }
+
+    .login-box {
+      background: white;
+      padding: 28px;
+      border-radius: 16px;
+      width: 360px;
+      max-width: 90vw;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .login-box h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .login-error {
+      color: var(--danger);
+      font-size: 12px;
+      margin-top: 8px;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    .logout-btn {
+      padding: 6px 12px;
+      border-radius: 18px;
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--green);
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- LOGIN -->
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-box">
-    <h2>Login</h2>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="loginEmail" placeholder="admin@example.com">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="••••••••">
-    </div>
-    <button class="btn-submit" onclick="login()">Login</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="logo">📋</div>
-    <h1>My Business <span>CRM</span></h1>
-  </div>
-  <div class="header-stats">
-    <div class="stat-pill">Total: <span id="totalCount">0</span></div>
-    <div class="stat-pill" id="userPill" style="display:none">User: <span id="userName">-</span></div>
-    <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
-    <div class="stat-pill">🟡 Naye: <span id="newCount">0</span></div>
-    <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
-      <div class="status-dot"></div>
-      <span id="waStatusText">WhatsApp Connect Karo</span>
+  <!-- LOGIN -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <h2>Login</h2>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn-submit" onclick="login()">Login</button>
+      <div class="login-error" id="loginError"></div>
     </div>
   </div>
-</div>
 
-<!-- QR MODAL -->
-<div class="qr-overlay" id="qrOverlay">
-  <div class="qr-box" id="qrBox">
-    <h2>📱 WhatsApp Connect Karo</h2>
-    <p>Apne phone pe WhatsApp kholo aur yeh QR code scan karo</p>
-    <canvas id="qrCanvas"></canvas>
-    <div class="qr-steps">
-      <p>Kaise scan karein:</p>
-      <ul>
-        <li>WhatsApp kholo phone mein</li>
-        <li>3 dots (⋮) → Linked Devices</li>
-        <li>"Link a Device" press karo</li>
-        <li>Yeh QR scan karo ✅</li>
-      </ul>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">📋</div>
+      <h1>My Business <span>CRM</span></h1>
     </div>
-    <button class="btn-close-qr" onclick="closeQR()">Baad Mein Karo</button>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
-    <div class="panel-title">➕ Naya Customer Add Karo</div>
-
-    <div class="form-group">
-      <label>📱 WhatsApp Number</label>
-      <input type="tel" id="inp-phone" placeholder="91XXXXXXXXXX">
-    </div>
-    <div class="form-group">
-      <label>👤 Naam</label>
-      <input type="text" id="inp-name" placeholder="Customer ka naam...">
-    </div>
-    <div class="form-group">
-      <label>🏠 Address</label>
-      <textarea id="inp-address" placeholder="Ghar/dukan ka address..."></textarea>
-    </div>
-    <div class="form-group">
-      <label>🛍️ Items Select Karo</label>
-      <div class="items-grid" id="itemsGrid"></div>
-    </div>
-    <div class="form-group">
-      <label>➕ Naya Item Jodo</label>
-      <div class="custom-item-row">
-        <input type="text" id="inp-custom-item" placeholder="Item ka naam...">
-        <button class="btn-add-item" onclick="addCustomItem()">+</button>
+    <div class="header-stats">
+      <div class="stat-pill">Total: <span id="totalCount">0</span></div>
+      <div class="stat-pill" id="userPill" style="display:none">User: <span id="userName">-</span></div>
+      <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
+      <div class="stat-pill">🟡 New Leads: <span id="newCount">0</span></div>
+      <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
+        <div class="status-dot"></div>
+        <span id="waStatusText">Link WhatsApp Account</span>
       </div>
     </div>
-    <div class="form-group">
-      <label>📝 Note</label>
-      <input type="text" id="inp-note" placeholder="Koi baat...">
-    </div>
-    <button class="btn-submit" onclick="addCustomer()">✅ Customer Save Karo</button>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <div class="right-header">
-      <h2>👥 Customers</h2>
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Dhundo..." oninput="renderList()">
+  <!-- QR MODAL -->
+  <div class="qr-overlay" id="qrOverlay">
+    <div class="qr-box" id="qrBox">
+      <h2>📱 Connect to WhatsApp</h2>
+      <p>Open WhatsApp on your mobile phone and scan this QR code</p>
+      <canvas id="qrCanvas"></canvas>
+      <div class="qr-steps">
+        <p>Instructions:</p>
+        <ul>
+          <li>Open WhatsApp on your phone</li>
+          <li>Tap Menu (⋮) or Settings (⚙️)</li>
+          <li>Tap "Linked Devices" → "Link a Device"</li>
+          <li>Scan the QR code on this screen ✅</li>
+        </ul>
       </div>
-      <div class="filter-tabs">
-        <button class="filter-tab active" onclick="setFilter('all',this)">Sab</button>
-        <button class="filter-tab" onclick="setFilter('new',this)">🟡 Naye</button>
-        <button class="filter-tab" onclick="setFilter('contacted',this)">✅ Contact</button>
+      <button class="btn-close-qr" onclick="closeQR()">Close (Do it later)</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="panel-title">➕ Add New Lead</div>
+
+      <div class="form-group">
+        <label>📱 WhatsApp Number</label>
+        <input type="tel" id="inp-phone" placeholder="91XXXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>👤 Customer Name</label>
+        <input type="text" id="inp-name" placeholder="Enter full name...">
+      </div>
+      <div class="form-group">
+        <label>🏠 Home/Delivery Address</label>
+        <textarea id="inp-address" placeholder="Enter complete address details..."></textarea>
+      </div>
+      <div class="form-group">
+        <label id="itemsLabel">Select Products</label>
+        <div class="items-grid" id="itemsGrid"></div>
+      </div>
+      <div class="form-group">
+        <label>📝 Note</label>
+        <input type="text" id="inp-note" placeholder="Add optional remarks...">
+      </div>
+      <button class="btn-submit" id="btnSaveCustomer" onclick="addCustomer()">✅ Save Customer</button>
+      <button class="btn btn-ghost" id="btnCancelEdit" style="width:100%; margin-top:8px; display:none"
+        onclick="resetForm()">Cancel Edit</button>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="right-header">
+        <h2>👥 Customers</h2>
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search leads by name or number..." oninput="renderList()">
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-tab" onclick="setFilter('new',this)">🟡 New Leads</button>
+          <button class="filter-tab" onclick="setFilter('contacted',this)">✅ Mature</button>
+        </div>
+      </div>
+      <div class="customer-list" id="customerList"></div>
+    </div>
+  </div>
+
+  <!-- MESSAGE MODAL -->
+  <div class="modal-overlay" id="msgModal">
+    <div class="modal">
+      <h3>💬 Send Message</h3>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:10px">
+        To: <strong id="modalPhone"></strong> — <span id="modalName"></span>
+      </p>
+      <textarea id="modalMsg"></textarea>
+      <div class="modal-actions">
+        <button class="btn-send-wa direct" onclick="sendViaServer()" id="btnServerSend">📤 Web Server</button>
+        <button class="btn-send-wa" onclick="sendViaWeb()">🌐 WA Web Client</button>
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       </div>
     </div>
-    <div class="customer-list" id="customerList"></div>
   </div>
-</div>
 
-<!-- MESSAGE MODAL -->
-<div class="modal-overlay" id="msgModal">
-  <div class="modal">
-    <h3>💬 Message Bhejo</h3>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:10px">
-      To: <strong id="modalPhone"></strong> — <span id="modalName"></span>
-    </p>
-    <textarea id="modalMsg"></textarea>
-    <div class="modal-actions">
-      <button class="btn-send-wa direct" onclick="sendViaServer()" id="btnServerSend">📤 Server Se Bhejo</button>
-      <button class="btn-send-wa" onclick="sendViaWeb()">🌐 WhatsApp Web</button>
-      <button class="btn-cancel" onclick="closeModal()">Raho</button>
-    </div>
-  </div>
-</div>
+  <div class="toast" id="toast"></div>
 
-<div class="toast" id="toast"></div>
+  <script>
+    // ========================================
+    // STATE
+    // ========================================
+    let customers = [];
+    let catalogItems = [];
+    let companyFocus = 'product';
+    let itemQuantities = {};
+    let itemPrices = {};
+    let editingCustomerId = null;
+    let currentFilter = 'all';
+    let modalPhone = '', modalName = '', modalCustomerId = null;
+    let wsConnected = false;
+    let waReady = false;
+    let ws = null;
+    let currentUser = null;
 
-<script>
-// ========================================
-// STATE
-// ========================================
-let customers = [];
-let customItems = JSON.parse(localStorage.getItem('crm_custom_items') || '[]');
-let defaultItems = ['Kapda','Juta','Electronic','Furniture','Grocery','Medicine','Mobile','Bijli','Plumbing','Other'];
-let selectedItems = [];
-let currentFilter = 'all';
-let modalPhone = '', modalName = '', modalCustomerId = null;
-let wsConnected = false;
-let waReady = false;
-let ws = null;
-let currentUser = null;
+    // ========================================
+    // WEBSOCKET CONNECTION
+    // ========================================
+    function connectWS() {
+      try {
+        ws = new WebSocket('ws://localhost:3000');
 
-// ========================================
-// WEBSOCKET CONNECTION
-// ========================================
-function connectWS() {
-  try {
-    ws = new WebSocket('ws://localhost:3000');
+        ws.onopen = () => {
+          wsConnected = true;
+          console.log('Server se connected!');
+        };
 
-    ws.onopen = () => {
-      wsConnected = true;
-      console.log('Server se connected!');
-    };
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+          if (data.type === 'init') {
+            customers = data.customers || [];
+            catalogItems = data.catalogItems || [];
+            companyFocus = data.companyFocus || 'product';
+            syncQuantitiesWithCatalog();
+            updateFocusLabels();
+            renderItemsGrid();
+            renderList();
+            updateStats();
+          }
+          else if (data.type === 'qr') {
+            if (currentUser && currentUser.role === 'admin') {
+              showQRCode(data.qr);
+            }
+          }
+          else if (data.type === 'ready') {
+            waReady = true;
+            updateWAStatus(true);
+            closeQR();
+            showToast('✅ WhatsApp connected!', 'success');
+          }
+          else if (data.type === 'disconnected') {
+            waReady = false;
+            updateWAStatus(false);
+            showToast('❌ WhatsApp disconnected!', 'error');
+          }
+          else if (data.type === 'new_customer') {
+            // Naya customer aaya - top mein dalo
+            customers = customers.filter(c => c.id !== data.customer.id);
+            customers.unshift(data.customer);
+            renderList();
+            updateStats();
+            // Notification
+            showToast('📩 New WhatsApp message! ' + data.customer.phone, 'success');
+            // Browser notification bhi
+            if (Notification.permission === 'granted') {
+              new Notification('📱 New WhatsApp Message!', {
+                body: 'From: ' + data.customer.phone,
+                icon: '📱'
+              });
+            }
+          }
+          else if (data.type === 'message_update') {
+            const idx = customers.findIndex(c => c.id === data.customer.id);
+            if (idx !== -1) customers[idx] = data.customer;
+            renderList();
+            updateStats();
+          }
+          else if (data.type === 'update_customer') {
+            const idx = customers.findIndex(c => c.id === data.customer.id);
+            if (idx !== -1) customers[idx] = data.customer;
+            renderList();
+            updateStats();
+          }
+          else if (data.type === 'delete_customer') {
+            customers = customers.filter(c => c.id !== data.id);
+            renderList();
+            updateStats();
+          }
+          else if (data.type === 'catalog_update') {
+            if (data.companyFocus) companyFocus = data.companyFocus;
+            if (Array.isArray(data.catalogItems)) catalogItems = data.catalogItems;
+            syncQuantitiesWithCatalog();
+            updateFocusLabels();
+            renderItemsGrid();
+          }
+        };
 
-      if (data.type === 'init') {
-        customers = data.customers || [];
-        customItems = [...new Set([...customItems, ...(data.customItems || [])])];
-        renderItemsGrid();
-        renderList();
-        updateStats();
+        ws.onclose = () => {
+          wsConnected = false;
+          setTimeout(connectWS, 3000); // reconnect karo
+        };
+
+        ws.onerror = () => {
+          showToast('❌ Server connection error', 'error');
+        };
+
+      } catch (e) {
+        showToast('❌ Server connection error', 'error');
       }
-      else if (data.type === 'qr') {
-        if (currentUser && currentUser.role === 'admin') {
-          showQRCode(data.qr);
+    }
+
+    function loadDemoMode() {
+      customers = [];
+      renderList();
+      updateStats();
+    }
+
+    // ========================================
+    // WHATSAPP STATUS
+    // ========================================
+    function updateWAStatus(ready) {
+      waReady = ready;
+      const btn = document.getElementById('waStatusBtn');
+      const txt = document.getElementById('waStatusText');
+      btn.className = 'wa-status ' + (ready ? 'connected' : 'disconnected');
+      txt.textContent = ready ? 'WhatsApp ✅ Connected' : 'WhatsApp Connect Karo';
+    }
+
+    async function loadWhatsAppStatus() {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      try {
+        const res = await fetch('/api/whatsapp/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        updateWAStatus(!!data.ready);
+        if (data.qr) showQRCode(data.qr);
+      } catch (e) { }
+    }
+
+    function toggleQR() {
+      if (!currentUser || currentUser.role !== 'admin') {
+        showToast('❌ Only admins can connect WhatsApp', 'error');
+        return;
+      }
+      if (waReady) {
+        showToast('✅ WhatsApp is already connected!', 'success');
+        return;
+      }
+      document.getElementById('qrOverlay').classList.add('show');
+      // Fallback: server se QR image laao (CDN blocked ho to)
+      renderQRFromServer();
+      // Server se QR maango
+      if (wsConnected) {
+        ws.send(JSON.stringify({ type: 'get_qr' }));
+      }
+    }
+
+    function closeQR() {
+      document.getElementById('qrOverlay').classList.remove('show');
+    }
+
+    async function showQRCode(qrString) {
+      document.getElementById('qrOverlay').classList.add('show');
+      const canvas = document.getElementById('qrCanvas');
+      if (window.QRCode && QRCode.toCanvas) {
+        try {
+          await QRCode.toCanvas(canvas, qrString, {
+            width: 220, margin: 2,
+            color: { dark: '#075E54', light: '#ffffff' }
+          });
+          return;
+        } catch (e) {
+          console.error(e);
         }
       }
-      else if (data.type === 'ready') {
-        waReady = true;
-        updateWAStatus(true);
-        closeQR();
-        showToast('✅ WhatsApp connect ho gaya!', 'success');
+      // CDN load fail ho jaye toh server se QR image fetch karo
+      await renderQRFromServer();
+    }
+
+    async function renderQRFromServer() {
+      const canvas = document.getElementById('qrCanvas');
+      try {
+        const res = await fetch('/api/whatsapp/qr-image');
+        const data = await res.json();
+        if (data && data.dataUrl) {
+          const img = new Image();
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = data.dataUrl;
+        }
+      } catch (e) {
+        console.error(e);
       }
-      else if (data.type === 'disconnected') {
-        waReady = false;
-        updateWAStatus(false);
-        showToast('❌ WhatsApp disconnect ho gaya!', 'error');
+    }
+
+    // ========================================
+    // ITEMS GRID (CATALOG)
+    // ========================================
+    function updateFocusLabels() {
+      const label = document.getElementById('itemsLabel');
+      if (!label) return;
+      label.textContent = companyFocus === 'service' ? 'Select Services' : 'Select Products';
+    }
+
+    function syncQuantitiesWithCatalog() {
+      const ids = new Set(catalogItems.map(i => String(i.id)));
+      Object.keys(itemQuantities).forEach(key => {
+        if (!ids.has(String(key))) delete itemQuantities[key];
+      });
+    }
+
+    function changeItemQty(id, delta) {
+      if (!itemQuantities[id]) itemQuantities[id] = 0;
+      itemQuantities[id] += delta;
+
+      if (itemQuantities[id] <= 0) {
+        delete itemQuantities[id];
+        delete itemPrices[id];
+      } else {
+        const catItem = catalogItems.find(c => c.id === id);
+        itemPrices[id] = (catItem ? catItem.price || 0 : 0) * itemQuantities[id];
       }
-      else if (data.type === 'new_customer') {
-        // Naya customer aaya - top mein dalo
+      renderItemsGrid();
+    }
+
+    function setItemQtyExact(id, value) {
+      const qty = parseInt(value, 10) || 0;
+      if (qty <= 0) {
+        delete itemQuantities[id];
+        delete itemPrices[id];
+      } else {
+        itemQuantities[id] = qty;
+        const catItem = catalogItems.find(c => c.id === id);
+        itemPrices[id] = (catItem ? catItem.price || 0 : 0) * qty;
+      }
+      renderItemsGrid();
+    }
+
+    function setItemPrice(id, value) {
+      if (itemQuantities[id] > 0) {
+        itemPrices[id] = parseFloat(value) || 0;
+      }
+    }
+
+    function renderItemsGrid() {
+      const grid = document.getElementById('itemsGrid');
+      if (!grid) return;
+      if (!catalogItems || catalogItems.length === 0) {
+        grid.innerHTML = '<div class="muted">No catalog items</div>';
+        return;
+      }
+      grid.innerHTML = catalogItems.map(item => {
+        const qty = itemQuantities[item.id] || 0;
+        const price = itemPrices[item.id] !== undefined ? itemPrices[item.id] : (item.price || 0);
+        return `
+      <div class="item-chip ${qty > 0 ? 'selected' : ''}" style="flex-direction: column; align-items: flex-start; padding: 10px; gap: 8px;">
+        <div style="font-weight: 600; font-size: 14px; width: 100%; display: flex; justify-content: space-between;">
+           <span>${item.name} <span class="muted" style="font-size:11px; font-weight:normal;">(₹${item.price || 0})</span></span>
+        </div>
+        
+        <div style="display: flex; gap: 10px; align-items: center; width: 100%; justify-content: space-between;">
+           <div style="display: flex; align-items: center; gap: 2px;">
+             <button class="btn btn-mini btn-ghost" style="padding: 2px 8px; border:1px solid var(--border);" onclick="changeItemQty(${item.id}, -1)">-</button>
+             <input class="qty-input" type="number" min="0" value="${qty}" onchange="setItemQtyExact(${item.id}, this.value)" style="width:40px; text-align:center; padding:2px;">
+             <button class="btn btn-mini btn-ghost" style="padding: 2px 8px; border:1px solid var(--border);" onclick="changeItemQty(${item.id}, 1)">+</button>
+           </div>
+           
+           <div style="display: flex; align-items: center; gap: 4px; ${qty > 0 ? '' : 'opacity:0.3; pointer-events:none;'}">
+             <span style="font-size:12px; font-weight:600; color:var(--text-light)">₹</span>
+             <input type="number" style="width:60px; padding:4px; border:1px solid var(--border); border-radius:4px; font-size:13px;" value="${price}" onchange="setItemPrice(${item.id}, this.value)">
+           </div>
+        </div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    function buildSelectedItems() {
+      return catalogItems
+        .map(item => ({
+          id: item.id,
+          name: item.name,
+          qty: itemQuantities[item.id] || 0,
+          price: itemPrices[item.id] !== undefined ? parseFloat(itemPrices[item.id]) : (parseFloat(item.price) || 0)
+        }))
+        .filter(i => i.qty > 0);
+    }
+
+    // ========================================
+    // ADD CUSTOMER
+    // ========================================
+    async function addCustomer() {
+      const phone = document.getElementById('inp-phone').value.trim();
+      const name = document.getElementById('inp-name').value.trim();
+      const address = document.getElementById('inp-address').value.trim();
+      const note = document.getElementById('inp-note').value.trim();
+
+      if (!phone) { showToast('⚠️ Phone number is required!', 'error'); return; }
+      if (!name) { showToast('⚠️ Name is required!', 'error'); return; }
+
+      const selectedItems = buildSelectedItems();
+      const customerData = { phone, name, address, note, selected_items: selectedItems, selection_type: companyFocus };
+
+      if (!wsConnected) {
+        showToast('âŒ Server connected nahi hai', 'error');
+        return;
+      }
+      const url = editingCustomerId ? `/api/customers/${editingCustomerId}` : '/api/customers';
+      const method = editingCustomerId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customerData)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || '❌ Save failed', 'error');
+        return;
+      }
+      if (data.customer) {
         customers = customers.filter(c => c.id !== data.customer.id);
         customers.unshift(data.customer);
-        renderList();
-        updateStats();
-        // Notification
-        showToast('📩 Naya WhatsApp message aaya! ' + data.customer.phone, 'success');
-        // Browser notification bhi
-        if (Notification.permission === 'granted') {
-          new Notification('📱 Naya WhatsApp Message!', {
-            body: 'Number: ' + data.customer.phone,
-            icon: '📱'
-          });
-        }
       }
-      else if (data.type === 'message_update') {
-        const idx = customers.findIndex(c => c.id === data.customer.id);
-        if (idx !== -1) customers[idx] = data.customer;
-        renderList();
-        updateStats();
+
+      const wasEditing = !!editingCustomerId;
+      resetForm();
+      renderList();
+      updateStats();
+      if (wasEditing) {
+        showToast('✅ Lead updated successfully!', 'success');
+      } else if (data.existing) {
+        showToast('✅ Lead already existed, updated successfully!', 'success');
+      } else {
+        showToast('✅ ' + name + ' saved successfully!', 'success');
       }
-      else if (data.type === 'update_customer') {
-        const idx = customers.findIndex(c => c.id === data.customer.id);
-        if (idx !== -1) customers[idx] = data.customer;
-        renderList();
-        updateStats();
+    }
+
+    function startEdit(id) {
+      const c = customers.find(x => x.id === id);
+      if (!c) return;
+      editingCustomerId = id;
+      document.getElementById('inp-phone').value = c.phone || '';
+      document.getElementById('inp-name').value = c.name || '';
+      document.getElementById('inp-address').value = c.address || '';
+      document.getElementById('inp-note').value = c.note || '';
+      const phoneInput = document.getElementById('inp-phone');
+      if (phoneInput) phoneInput.disabled = true;
+      const btnSave = document.getElementById('btnSaveCustomer');
+      if (btnSave) btnSave.textContent = '✅ Update Customer';
+      const btnCancel = document.getElementById('btnCancelEdit');
+      if (btnCancel) btnCancel.style.display = 'block';
+
+      itemQuantities = {};
+      itemPrices = {};
+      if (Array.isArray(c.items)) {
+        c.items.forEach(it => {
+          if (!it) return;
+          const qty = it.qty ? parseInt(it.qty, 10) : 1;
+          const price = parseFloat(it.price);
+
+          if (it.id) {
+            itemQuantities[it.id] = qty;
+            if (!isNaN(price)) itemPrices[it.id] = price;
+          } else if (it.name) {
+            const match = catalogItems.find(ci => ci.name === it.name);
+            if (match) {
+              itemQuantities[match.id] = qty;
+              if (!isNaN(price)) itemPrices[match.id] = price;
+            }
+          }
+        });
       }
-      else if (data.type === 'delete_customer') {
-        customers = customers.filter(c => c.id !== data.id);
-        renderList();
-        updateStats();
-      }
-    };
+      renderItemsGrid();
+    }
 
-    ws.onclose = () => {
-      wsConnected = false;
-      setTimeout(connectWS, 3000); // reconnect karo
-    };
+    function formatItemLabel(item) {
+      if (typeof item === 'string') return item;
+      if (!item) return '';
+      const qty = item.qty && item.qty > 1 ? ` x${item.qty}` : '';
+      const price = item.price !== undefined ? ` (₹${item.price})` : '';
+      return `${item.name || ''}${qty}${price}`.trim();
+    }
 
-    ws.onerror = () => {
-      showToast('âŒ Server connection error', 'error');
-    };
+    // ========================================
+    // RENDER LIST
+    // ========================================
+    function renderList() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const list = document.getElementById('customerList');
 
-  } catch(e) {
-    showToast('âŒ Server connection error', 'error');
-  }
-}
-
-function loadDemoMode() {
-  customers = [];
-  renderList();
-  updateStats();
-}
-
-// ========================================
-// WHATSAPP STATUS
-// ========================================
-function updateWAStatus(ready) {
-  waReady = ready;
-  const btn = document.getElementById('waStatusBtn');
-  const txt = document.getElementById('waStatusText');
-  btn.className = 'wa-status ' + (ready ? 'connected' : 'disconnected');
-  txt.textContent = ready ? 'WhatsApp ✅ Connected' : 'WhatsApp Connect Karo';
-}
-
-async function loadWhatsAppStatus() {
-  if (!currentUser || currentUser.role !== 'admin') return;
-  try {
-    const res = await fetch('/api/whatsapp/status');
-    if (!res.ok) return;
-    const data = await res.json();
-    updateWAStatus(!!data.ready);
-    if (data.qr) showQRCode(data.qr);
-  } catch(e) {}
-}
-
-function toggleQR() {
-  if (!currentUser || currentUser.role !== 'admin') {
-    showToast('âŒ Sirf admin WhatsApp connect kar sakta hai', 'error');
-    return;
-  }
-  if (waReady) {
-    showToast('✅ WhatsApp pehle se connected hai!', 'success');
-    return;
-  }
-  document.getElementById('qrOverlay').classList.add('show');
-  // Fallback: server se QR image laao (CDN blocked ho to)
-  renderQRFromServer();
-  // Server se QR maango
-  if (wsConnected) {
-    ws.send(JSON.stringify({ type: 'get_qr' }));
-  }
-}
-
-function closeQR() {
-  document.getElementById('qrOverlay').classList.remove('show');
-}
-
-async function showQRCode(qrString) {
-  document.getElementById('qrOverlay').classList.add('show');
-  const canvas = document.getElementById('qrCanvas');
-  if (window.QRCode && QRCode.toCanvas) {
-    try {
-      await QRCode.toCanvas(canvas, qrString, {
-        width: 220, margin: 2,
-        color: { dark: '#075E54', light: '#ffffff' }
+      let filtered = customers.filter(c => {
+        const match = c.name.toLowerCase().includes(search) || c.phone.includes(search);
+        if (currentFilter === 'new') return match && c.isNew;
+        if (currentFilter === 'contacted') return match && c.contacted;
+        return match;
       });
-      return;
-    } catch(e) {
-      console.error(e);
-    }
-  }
-  // CDN load fail ho jaye toh server se QR image fetch karo
-  await renderQRFromServer();
-}
 
-async function renderQRFromServer() {
-  const canvas = document.getElementById('qrCanvas');
-  try {
-    const res = await fetch('/api/whatsapp/qr-image');
-    const data = await res.json();
-    if (data && data.dataUrl) {
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-      };
-      img.src = data.dataUrl;
-    }
-  } catch(e) {
-    console.error(e);
-  }
-}
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="icon">📱</div><h3>No leads found</h3><p>Add using the left panel or connect WhatsApp</p></div>`;
+        return;
+      }
 
-// ========================================
-// ITEMS GRID
-// ========================================
-function getAllItems() { return [...defaultItems, ...customItems]; }
-
-function renderItemsGrid() {
-  document.getElementById('itemsGrid').innerHTML = getAllItems().map(item => `
-    <div class="item-chip ${selectedItems.includes(item)?'selected':''}" onclick="toggleItem('${item.replace(/'/g,"\\'")}')">
-      ${selectedItems.includes(item)?'✓ ':''}${item}
-    </div>
-  `).join('');
-}
-
-function toggleItem(item) {
-  selectedItems.includes(item)
-    ? selectedItems = selectedItems.filter(i => i !== item)
-    : selectedItems.push(item);
-  renderItemsGrid();
-}
-
-function addCustomItem() {
-  const inp = document.getElementById('inp-custom-item');
-  const val = inp.value.trim();
-  if (!val) return;
-  if (!getAllItems().includes(val)) {
-    customItems.push(val);
-    localStorage.setItem('crm_custom_items', JSON.stringify(customItems));
-    if (wsConnected) {
-      fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({item: val}) });
-    }
-  }
-  selectedItems.push(val);
-  inp.value = '';
-  renderItemsGrid();
-  showToast('✅ Item joda gaya!');
-}
-
-// ========================================
-// ADD CUSTOMER
-// ========================================
-async function addCustomer() {
-  const phone = document.getElementById('inp-phone').value.trim();
-  const name = document.getElementById('inp-name').value.trim();
-  const address = document.getElementById('inp-address').value.trim();
-  const note = document.getElementById('inp-note').value.trim();
-
-  if (!phone) { showToast('⚠️ Phone number zaruri hai!', 'error'); return; }
-  if (!name) { showToast('⚠️ Naam zaruri hai!', 'error'); return; }
-
-  const customerData = { phone, name, address, note, items: [...selectedItems] };
-
-  if (!wsConnected) {
-    showToast('âŒ Server connected nahi hai', 'error');
-    return;
-  }
-  const res = await fetch('/api/customers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(customerData)
-  });
-  const data = await res.json();
-  if (data.success) {
-    customers.unshift(data.customer);
-  }
-
-  resetForm();
-  renderList();
-  updateStats();
-  showToast('✅ ' + name + ' save ho gaya!', 'success');
-}
-
-// ========================================
-// RENDER LIST
-// ========================================
-function renderList() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const list = document.getElementById('customerList');
-
-  let filtered = customers.filter(c => {
-    const match = c.name.toLowerCase().includes(search) || c.phone.includes(search);
-    if (currentFilter === 'new') return match && c.isNew;
-    if (currentFilter === 'contacted') return match && c.contacted;
-    return match;
-  });
-
-  if (filtered.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="icon">📱</div><h3>Koi customer nahi</h3><p>Baayein se add karo ya WhatsApp connect karo</p></div>`;
-    return;
-  }
-
-  list.innerHTML = filtered.map(c => `
-    <div class="customer-card ${c.isNew ? 'new-customer' : ''}">
+      list.innerHTML = filtered.map(c => `
+    <div class="customer-card ${c.mature ? 'mature-customer' : (c.isNew ? 'new-customer' : (c.contacted ? 'contacted-customer' : ''))}">
       <div class="card-top">
         <div class="card-left">
           <div class="avatar">${c.name.charAt(0).toUpperCase()}</div>
           <div class="customer-info">
             <h3>
               ${c.name}
-              ${c.isNew ? '<span class="new-badge">🟡 Naya</span>' : ''}
+              ${c.isNew ? '<span class="new-badge">🟡 New Leads</span>' : ''}
               ${c.source === 'whatsapp' ? '<span class="wa-badge">📱 WA</span>' : ''}
             </h3>
             <div class="phone">📱 ${c.phone}</div>
@@ -652,217 +1587,266 @@ function renderList() {
             ${c.note && !c.lastMessage ? `<div class="address" style="color:#92400e">📝 ${c.note}</div>` : ''}
           </div>
         </div>
-        <div class="card-actions">
-          <button class="btn-wa" onclick="openMsgModal('${c.phone}','${c.name.replace(/'/g,"\\'")}',${c.id})">
-            💬 Chat
-          </button>
-          <button class="btn-delete" onclick="deleteCustomer(${c.id})">🗑</button>
-        </div>
       </div>
       ${c.items && c.items.length > 0 ? `
-        <div class="items-row">${c.items.map(i => `<span class="item-tag">${i}</span>`).join('')}</div>
+        <div class="items-row">${c.items.map(i => `<span class="item-tag">${formatItemLabel(i)}</span>`).join('')}</div>
       ` : ''}
-      <div class="timestamp">⏰ ${c.time}${c.messageCount > 1 ? ` · ${c.messageCount} messages` : ''}</div>
+      <div class="card-actions">
+        <button class="btn-wa" onclick="openMsgModal('${c.phone}','${c.name.replace(/'/g, "\\'")}',${c.id})">
+          💬 Chat
+        </button>
+        ${!c.mature ? `<button class="btn-wa" style="background:#075E54" onclick="markMature(${c.id})">✅ Order Done</button>` : ''}
+        <button class="btn-edit" onclick="startEdit(${c.id})">✏️ Edit</button>
+        ${currentUser && currentUser.role === 'admin' ? `<button class="btn-delete" onclick="deleteCustomer(${c.id})">Delete</button>` : ''}
+      </div>
+      <div class="timestamp">⏰ ${c.time || ''}${c.messageCount > 1 ? ` · ${c.messageCount} messages` : ''}</div>
     </div>
   `).join('');
-}
-
-// ========================================
-// MESSAGE MODAL
-// ========================================
-function openMsgModal(phone, name, id) {
-  modalPhone = phone;
-  modalName = name;
-  modalCustomerId = id;
-
-  document.getElementById('modalPhone').textContent = phone;
-  document.getElementById('modalName').textContent = name;
-
-  const c = customers.find(x => x.id === id);
-  let msg = `Namaste ${name}! 🙏\n`;
-  if (c && c.items && c.items.length > 0) msg += `Aapne ${c.items.join(', ')} ke baare mein poochha tha.\n`;
-  msg += `Kya main aapki madad kar sakta hoon?`;
-  document.getElementById('modalMsg').value = msg;
-
-  // Server send button visibility
-  document.getElementById('btnServerSend').style.display = waReady ? 'flex' : 'none';
-
-  document.getElementById('msgModal').classList.add('show');
-
-  // Mark as contacted
-  if (c) {
-    c.isNew = false;
-    c.contacted = true;
-    if (wsConnected) {
-      fetch(`/api/customers/${id}`, {
-        method: 'PUT', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ isNew: false, contacted: true })
-      });
     }
-    updateStats();
-    renderList();
-  }
-}
 
-function closeModal() { document.getElementById('msgModal').classList.remove('show'); }
+    // ========================================
+    // MESSAGE MODAL
+    // ========================================
+    function openMsgModal(phone, name, id) {
+      modalPhone = phone;
+      modalName = name;
+      modalCustomerId = id;
 
-async function sendViaServer() {
-  const msg = document.getElementById('modalMsg').value;
-  try {
-    const res = await fetch('/api/whatsapp/send', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ phone: modalPhone, message: msg })
-    });
-    const data = await res.json();
-    if (data.success) {
-      showToast('✅ Message send ho gaya!', 'success');
+      document.getElementById('modalPhone').textContent = phone;
+      document.getElementById('modalName').textContent = name;
+
+      const c = customers.find(x => x.id === id);
+      let msg = `Namaste ${name}! 🙏\n`;
+      if (c && c.items && c.items.length > 0) {
+        const labels = c.items.map(i => formatItemLabel(i)).filter(Boolean).join(', ');
+        msg += `Aapne ${labels} ke baare mein poochha tha.\n`;
+      }
+      msg += `Kya main aapki madad kar sakta hoon?`;
+      document.getElementById('modalMsg').value = msg;
+
+      // Server send button visibility - Always show for agents/admins if we want them to use it
+      document.getElementById('btnServerSend').style.display = 'flex';
+
+      document.getElementById('msgModal').classList.add('show');
+
+      // Mark as contacted
+      if (c) {
+        c.isNew = false;
+        c.contacted = true;
+        if (wsConnected) {
+          fetch(`/api/customers/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isNew: false, contacted: true })
+          });
+        }
+        updateStats();
+        renderList();
+      }
+    }
+
+    function closeModal() { document.getElementById('msgModal').classList.remove('show'); }
+
+    async function sendViaServer() {
+      const msg = document.getElementById('modalMsg').value;
+      try {
+        const res = await fetch('/api/whatsapp/send', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: modalPhone, message: msg })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Message send ho gaya!', 'success');
+          closeModal();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Server se error!', 'error');
+      }
+    }
+
+    function sendViaWeb() {
+      const msg = document.getElementById('modalMsg').value;
+      window.open(`https://wa.me/${modalPhone}?text=${encodeURIComponent(msg)}`, '_blank');
       closeModal();
-    } else {
-      showToast('❌ ' + data.error, 'error');
     }
-  } catch(e) {
-    showToast('❌ Server se error!', 'error');
-  }
-}
 
-function sendViaWeb() {
-  const msg = document.getElementById('modalMsg').value;
-  window.open(`https://wa.me/${modalPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-  closeModal();
-}
-
-// ========================================
-// DELETE
-// ========================================
-async function deleteCustomer(id) {
-  if (!confirm('Delete karo?')) return;
-  if (!wsConnected) {
-    showToast('âŒ Server connected nahi hai', 'error');
-    return;
-  }
-  customers = customers.filter(c => c.id !== id);
-  fetch(`/api/customers/${id}`, { method: 'DELETE' });
-  renderList();
-  updateStats();
-  showToast('🗑 Delete ho gaya!');
-}
-
-// ========================================
-// HELPERS
-// ========================================
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderList();
-}
-
-function updateStats() {
-  document.getElementById('totalCount').textContent = customers.length;
-  document.getElementById('newCount').textContent = customers.filter(c => c.isNew).length;
-}
-
-function resetForm() {
-  ['inp-phone','inp-name','inp-address','inp-note'].forEach(id => document.getElementById(id).value = '');
-  selectedItems = [];
-  renderItemsGrid();
-}
-
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
-  setTimeout(() => t.className = 'toast', 3000);
-}
-
-// AUTH
-function showLogin(show) {
-  const overlay = document.getElementById('loginOverlay');
-  overlay.classList.toggle('show', !!show);
-}
-
-function applyUserUI() {
-  const userPill = document.getElementById('userPill');
-  const userName = document.getElementById('userName');
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (currentUser) {
-    userPill.style.display = 'inline-flex';
-    logoutBtn.style.display = 'inline-flex';
-    userName.textContent = currentUser.name + ' (' + currentUser.role + ')';
-  }
-  if (currentUser && currentUser.role !== 'admin') {
-    const waBtn = document.getElementById('waStatusBtn');
-    if (waBtn) waBtn.style.display = 'none';
-  }
-}
-
-async function checkAuth() {
-  try {
-    const res = await fetch('/api/auth/me');
-    if (res.ok) {
-      const data = await res.json();
-      currentUser = data.user;
-      applyUserUI();
-      showLogin(false);
-      startApp();
-      return;
+    // ========================================
+    // DELETE
+    // ========================================
+    async function deleteCustomer(id) {
+      if (!confirm('Delete karo?')) return;
+      if (!wsConnected) {
+        showToast('âŒ Server connected nahi hai', 'error');
+        return;
+      }
+      customers = customers.filter(c => c.id !== id);
+      fetch(`/api/customers/${id}`, { method: 'DELETE' });
+      renderList();
+      updateStats();
+      showToast('🗑 Delete ho gaya!');
     }
-  } catch(e) {}
-  showLogin(true);
-}
 
-async function login() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const err = document.getElementById('loginError');
-  err.textContent = '';
-  if (!email || !password) {
-    err.textContent = 'Email aur password zaruri hai';
-    return;
-  }
-  try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      currentUser = data.user;
-      applyUserUI();
-      showLogin(false);
-      startApp();
-    } else {
-      err.textContent = data.error || 'Login failed';
+    async function markMature(id) {
+      const c = customers.find(x => x.id === id);
+      if (!c) return;
+
+      // Validate required fields before allowing Order Done
+      if (!c.name || c.name.toLowerCase().includes('unknown')) {
+        showToast('⚠️ Customer Name is required before marking as Order Done!', 'error');
+        return;
+      }
+      if (!c.address || c.address.trim() === '') {
+        showToast('⚠️ Delivery Address is required before marking as Order Done!', 'error');
+        return;
+      }
+      if (!c.items || c.items.length === 0) {
+        showToast('⚠️ At least one Product must be selected before marking as Order Done!', 'error');
+        return;
+      }
+
+      if (!confirm('Kya iss customer ka order confirm ho gaya hai?')) return;
+      try {
+        const res = await fetch(`/api/customers/${id}/mature`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Order Marked as Done!', 'success');
+          // Update local state if needed (WS will also broadcast)
+          const c = customers.find(x => x.id === id);
+          if (c) {
+            c.mature = true;
+            c.mature_at = new Date().toISOString();
+          }
+          renderList();
+        } else {
+          showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+      } catch (e) {
+        showToast('❌ Server error', 'error');
+      }
     }
-  } catch(e) {
-    err.textContent = 'Server error';
-  }
-}
 
-async function logout() {
-  await fetch('/api/auth/logout', { method: 'POST' });
-  location.reload();
-}
+    // ========================================
+    // HELPERS
+    // ========================================
+    function setFilter(f, btn) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderList();
+    }
 
-function startApp() {
-  renderItemsGrid();
-  renderList();
-  updateStats();
-  connectWS();
-  loadWhatsAppStatus();
-}
+    function updateStats() {
+      document.getElementById('totalCount').textContent = customers.length;
+      document.getElementById('newCount').textContent = customers.filter(c => c.isNew).length;
+    }
 
-// Notification permission
-if (Notification.permission === 'default') Notification.requestPermission();
+    function resetForm() {
+      ['inp-phone', 'inp-name', 'inp-address', 'inp-note'].forEach(id => document.getElementById(id).value = '');
+      itemQuantities = {};
+      itemPrices = {};
+      editingCustomerId = null;
+      const phoneInput = document.getElementById('inp-phone');
+      if (phoneInput) phoneInput.disabled = false;
+      const btnSave = document.getElementById('btnSaveCustomer');
+      if (btnSave) btnSave.textContent = '✅ Customer Save Karo';
+      const btnCancel = document.getElementById('btnCancelEdit');
+      if (btnCancel) btnCancel.style.display = 'none';
+      renderItemsGrid();
+    }
 
-// Enter key for item
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.target.id === 'inp-custom-item') addCustomItem();
-});
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => t.className = 'toast', 3000);
+    }
 
-// INIT
-checkAuth();
-</script>
+    // AUTH
+    function showLogin(show) {
+      const overlay = document.getElementById('loginOverlay');
+      overlay.classList.toggle('show', !!show);
+    }
+
+    function applyUserUI() {
+      const userPill = document.getElementById('userPill');
+      const userName = document.getElementById('userName');
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (currentUser) {
+        userPill.style.display = 'inline-flex';
+        logoutBtn.style.display = 'inline-flex';
+        userName.textContent = currentUser.name + ' (' + currentUser.role + ')';
+      }
+      if (currentUser && currentUser.role !== 'admin') {
+        const waBtn = document.getElementById('waStatusBtn');
+        if (waBtn) waBtn.style.display = 'none';
+      }
+    }
+
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          applyUserUI();
+          showLogin(false);
+          startApp();
+          return;
+        }
+      } catch (e) { }
+      showLogin(true);
+    }
+
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const err = document.getElementById('loginError');
+      err.textContent = '';
+      if (!email || !password) {
+        err.textContent = 'Email aur password zaruri hai';
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentUser = data.user;
+          applyUserUI();
+          showLogin(false);
+          startApp();
+        } else {
+          err.textContent = data.error || 'Login failed';
+        }
+      } catch (e) {
+        err.textContent = 'Server error';
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.reload();
+    }
+
+    function startApp() {
+      updateFocusLabels();
+      renderItemsGrid();
+      renderList();
+      updateStats();
+      connectWS();
+      loadWhatsAppStatus();
+    }
+
+    // Notification permission
+    if (Notification.permission === 'default') Notification.requestPermission();
+
+    // INIT
+    checkAuth();
+  </script>
 </body>
+
 </html>

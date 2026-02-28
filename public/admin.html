@@ -1,513 +1,1363 @@
 <!DOCTYPE html>
 <html lang="hi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Business CRM - Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<style>
-  :root {
-    --green: #25D366; --green-dark: #128C7E; --green-light: #DCF8C6;
-    --bg: #f0f2f5; --white: #ffffff; --text: #1a1a2e; --text-light: #667085;
-    --border: #e4e7ec; --accent: #075E54; --danger: #ef4444; --warning: #f59e0b;
-    --shadow: 0 4px 24px rgba(0,0,0,0.08); --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Baloo 2', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Business CRM - Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    :root {
+      --green: #25D366;
+      --green-dark: #128C7E;
+      --green-light: #DCF8C6;
+      --bg: #f8fafc;
+      --white: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --accent: #075E54;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
 
-  .header {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--green-dark) 60%, var(--green) 100%);
-    padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
-    height: 64px; box-shadow: 0 2px 16px rgba(7,94,84,0.3); position: sticky; top: 0; z-index: 100;
-  }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .header h1 { color: white; font-size: 20px; font-weight: 800; }
-  .header h1 span { color: var(--green-light); }
-  .header-actions { display: flex; gap: 10px; align-items: center; }
-  .stat-pill {
-    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-    padding: 5px 13px; border-radius: 20px; color: white; font-size: 13px; font-weight: 600;
-  }
-  .logout-btn {
-    padding: 6px 12px; border-radius: 18px; border: 1.5px solid rgba(255,255,255,0.4);
-    background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 700; cursor: pointer;
-  }
-  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-  .wa-status {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .wa-status.connected { background: rgba(37,211,102,0.2); border: 1.5px solid var(--green); color: white; }
-  .wa-status.disconnected { background: rgba(239,68,68,0.2); border: 1.5px solid #ef4444; color: white; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .connected .status-dot { background: var(--green); animation: blink 1.5s infinite; }
-  .disconnected .status-dot { background: #ef4444; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    body {
+      font-family: 'Baloo 2', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
 
-  .main { padding: 20px; display: grid; gap: 16px; grid-template-columns: 1fr; }
-  .section { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
-  .section h2 { font-size: 16px; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+    .header {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--green-dark) 60%, var(--green) 100%);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 100;
+    }
 
-  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-  .form-group label { font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
-  .form-group input, .form-group select {
-    padding: 10px 13px; border: 2px solid var(--border); border-radius: 10px;
-    font-family: 'Baloo 2', sans-serif; font-size: 14px; color: var(--text);
-    transition: all 0.2s; background: var(--bg); outline: none;
-  }
-  .form-group input:focus, .form-group select:focus { border-color: var(--green); background: white; }
-  .btn {
-    padding: 10px 14px; background: var(--green-dark); color: white; border: none; border-radius: 10px;
-    cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.2s;
-  }
-  .btn:hover { background: var(--accent); }
-  .btn-danger { background: var(--danger); }
-  .btn-ghost { background: white; color: var(--text-light); border: 2px solid var(--border); }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-  .grid { display: grid; gap: 10px; }
-  .lead-card, .user-card {
-    padding: 12px; border: 2px solid var(--border); border-radius: 12px; background: white;
-    display: grid; gap: 8px;
-  }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .muted { color: var(--text-light); font-size: 12px; }
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--accent);
+      font-weight: 800;
+    }
 
-  /* LOGIN */
-  .login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 500; }
-  .login-overlay.show { display: flex; }
-  .login-box { background: white; padding: 28px; border-radius: 16px; width: 360px; max-width: 90vw; box-shadow: var(--shadow-lg); }
-  .login-box h2 { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 12px; text-align: center; }
-  .login-error { color: var(--danger); font-size: 12px; margin-top: 8px; text-align: center; min-height: 16px; }
+    .header h1 {
+      color: white;
+      font-size: 18px;
+      font-weight: 800;
+    }
 
-  /* QR */
-  .qr-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300;
-    align-items: center; justify-content: center; backdrop-filter: blur(6px);
-  }
-  .qr-overlay.show { display: flex; }
-  .qr-box {
-    background: white; border-radius: 24px; padding: 36px;
-    text-align: center; max-width: 380px; width: 90%;
-    box-shadow: var(--shadow-lg); animation: popIn 0.3s ease;
-  }
-  @keyframes popIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
-  #qrCanvas { border-radius: 12px; border: 3px solid var(--green-light); }
+    .header h1 span {
+      color: var(--green-light);
+    }
 
-  .toast { position:fixed; bottom:24px; right:24px; background:var(--accent); color:white; padding:13px 18px; border-radius:12px; font-size:14px; font-weight:600; box-shadow:var(--shadow-lg); z-index:999; transform:translateY(100px); opacity:0; transition:all 0.3s; }
-  .toast.show { transform:translateY(0); opacity:1; }
-  .toast.success { background:var(--green-dark); }
-  .toast.error { background:var(--danger); }
-</style>
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* DASHBOARD TOP BAR */
+    .dashboard-bar {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--bg);
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      min-width: 100px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-value.mature {
+      color: var(--green-dark);
+    }
+
+    .stat-value.new {
+      color: var(--warning);
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+
+    .header-input {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .header-input:focus {
+      border-color: var(--green);
+    }
+
+    /* TWO COLUMN LAYOUT */
+    .admin-main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      overflow: hidden;
+      height: calc(100vh - 128px);
+      /* Adjust based on header + dashboard bar */
+      padding: 16px;
+    }
+
+    .admin-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .column-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fcfdfe;
+    }
+
+    .column-header h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .column-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* CARDS */
+    .lead-card {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: white;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .lead-card:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .lead-card.mature-card {
+      border-left: 4px solid var(--green);
+      background: #f0fff4;
+    }
+
+    .card-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+
+    .card-phone {
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 600;
+    }
+
+    .card-details {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .card-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 7px 12px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--green-dark);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      transform: scale(1.02);
+    }
+
+    .btn-ghost {
+      background: #f1f5f9;
+      color: var(--text-light);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+
+    .btn-mini {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    select.form-select {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: 'Baloo 2', sans-serif;
+      outline: none;
+      background: #f8fafc;
+    }
+
+    /* UTILS */
+    .wa-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .wa-status.connected {
+      background: rgba(37, 211, 102, 0.15);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    .wa-status.disconnected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fff;
+      border-color: #ef4444;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .connected .status-dot {
+      background: var(--green);
+      animation: blink 1.5s infinite;
+    }
+
+    .disconnected .status-dot {
+      background: #ef4444;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    .logout-btn {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* OVERLAYS */
+    .modal-overlay,
+    .login-overlay,
+    .qr-overlay,
+    .audit-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show,
+    .login-overlay.show,
+    .qr-overlay.show,
+    .audit-overlay.show {
+      display: flex;
+    }
+
+    .modal-box,
+    .login-box,
+    .qr-box,
+    .audit-box {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      width: 400px;
+      max-width: 90vw;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      animation: popIn 0.3s ease;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    .login-box h2,
+    .qr-box h2,
+    .audit-box h2,
+    .modal-box h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+    }
+
+    .login-error {
+      color: var(--danger);
+      font-size: 12px;
+      margin-top: 8px;
+      text-align: center;
+      min-height: 16px;
+    }
+
+    #qrCanvas {
+      display: block;
+      margin: 15px auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- LOGIN -->
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-box">
-    <h2>Admin Login</h2>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="loginEmail" placeholder="admin@example.com">
+  <!-- LOGIN -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn" onclick="login()">Login</button>
+      <div class="login-error" id="loginError"></div>
     </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="••••••••">
-    </div>
-    <button class="btn" onclick="login()">Login</button>
-    <div class="login-error" id="loginError"></div>
   </div>
-</div>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="logo">A</div>
-    <h1>Admin <span>Panel</span></h1>
-  </div>
-  <div class="header-actions">
-    <div class="stat-pill" id="userPill" style="display:none">User: <span id="userName">-</span></div>
-    <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
-    <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
-      <div class="status-dot"></div>
-      <span id="waStatusText">WhatsApp Connect</span>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">A</div>
+      <h1>Admin <span>Panel</span></h1>
+    </div>
+    <div class="header-actions">
+      <div class="stat-pill" id="userPill" style="display:none">User: <span id="userName">-</span></div>
+      <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
+      <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
+        <div class="status-dot"></div>
+        <span id="waStatusText">WhatsApp Connect</span>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- QR MODAL -->
-<div class="qr-overlay" id="qrOverlay">
-  <div class="qr-box" id="qrBox">
-    <h2>WhatsApp Connect</h2>
-    <p class="muted">QR scan karke WhatsApp connect karo</p>
-    <canvas id="qrCanvas"></canvas>
-    <div style="margin-top:12px">
-      <button class="btn" onclick="closeQR()">Close</button>
+  <!-- QR MODAL -->
+  <div class="qr-overlay" id="qrOverlay">
+    <div class="qr-box" id="qrBox">
+      <h2>WhatsApp Connect</h2>
+      <p class="muted">QR scan karke WhatsApp connect karo</p>
+      <canvas id="qrCanvas"></canvas>
+      <div style="margin-top:12px">
+        <button class="btn" onclick="closeQR()">Close</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="main">
-  <div class="section">
-    <h2>Assignment Rule</h2>
-    <div class="row">
-      <div class="form-group" style="min-width:220px">
-        <label>Rule</label>
-        <select id="assignmentRule">
-          <option value="manual">Manual</option>
-          <option value="auto">Auto (Round Robin)</option>
-          <option value="random">Random</option>
+  <div class="dashboard-bar">
+    <div class="stats-container">
+      <div class="stat-card">
+        <span class="stat-label">Total Mature</span>
+        <span class="stat-value mature" id="statMature">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Assigned</span>
+        <span class="stat-value" id="statAssigned">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">New / Unassigned</span>
+        <span class="stat-value new" id="statUnassigned">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Today Total</span>
+        <span class="stat-value" id="statToday" style="color:var(--accent)">0</span>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Date:</label>
+        <input type="date" id="filterDate" class="header-input" onchange="renderAll()">
+      </div>
+      <div class="filter-group">
+        <label>Agent:</label>
+        <select id="filterAgent" class="header-input" onchange="renderAll()">
+          <option value="all">All Agents</option>
         </select>
       </div>
-      <button class="btn" onclick="saveRule()">Save</button>
+      <div class="filter-group">
+        <input type="text" id="filterSearch" class="header-input" placeholder="Search Name/Phone..."
+          oninput="renderAll()">
+      </div>
+      <button class="btn btn-ghost" onclick="toggleSettingsModal()">⚙️ Settings</button>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Unassigned Leads</h2>
-    <div id="unassignedList" class="grid"></div>
-  </div>
-
-  <div class="section">
-    <h2>Users</h2>
-    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px">
-      <div>
-        <div class="form-group">
-          <label>Name</label>
-          <input type="text" id="newUserName" placeholder="Agent name">
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="newUserEmail" placeholder="agent@example.com">
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="newUserPassword" placeholder="••••••••">
-        </div>
-        <div class="form-group">
-          <label>Role</label>
-          <select id="newUserRole">
-            <option value="agent">Agent</option>
-            <option value="admin">Admin</option>
+  <div class="admin-main">
+    <!-- LEFT COLUMN: NEW / UNASSIGNED -->
+    <div class="admin-column">
+      <div class="column-header">
+        <h2>🟡 New Leads (Unassigned)</h2>
+        <div class="row" id="bulkActions" style="display:none">
+          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="bulkDelete()">Delete
+            Selected</button>
+          <select id="bulkAssignSelect" class="form-select">
+            <option value="">Assign to...</option>
           </select>
+          <button class="btn btn-mini" onclick="bulkAssign()">Assign Selected</button>
         </div>
-        <button class="btn" onclick="createUser()">Create User</button>
       </div>
-      <div>
-        <div id="usersList" class="grid"></div>
+      <div class="column-scroll" id="unassignedColumn">
+        <!-- Leads will be rendered here -->
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: ASSIGNED / IN-PROGRESS -->
+    <div class="admin-column">
+      <div class="column-header">
+        <h2>✅ Assigned Leads</h2>
+        <span class="muted" id="assignedCount">0 leads</span>
+      </div>
+      <div class="column-scroll" id="assignedColumn">
+        <!-- Leads will be rendered here -->
+      </div>
+    </div>
+
+    <!-- THIRD COLUMN: MATURE / ORDERED -->
+    <div class="admin-column">
+      <div class="column-header">
+        <h2>🟢 Mature (Ordered)</h2>
+        <span class="muted" id="matureCount">0 leads</span>
+      </div>
+      <div class="column-scroll" id="matureColumn">
+        <!-- Mature leads will be rendered here -->
       </div>
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <!-- SETTINGS MODAL (HIDDEN BY DEFAULT) -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-box" style="width: 500px; max-height: 85vh; overflow-y: auto;">
+      <h2>⚙️ System Settings</h2>
 
-<script>
-let customers = [];
-let agents = [];
-let users = [];
-let ws = null;
-let wsConnected = false;
-let waReady = false;
-let currentUser = null;
+      <div style="display: grid; gap: 24px;">
+        <section>
+          <h3
+            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
+            Lead Assignment Rule</h3>
+          <div style="display: flex; gap: 10px;">
+            <select id="assignmentRule" class="form-select" style="flex:1; height: 38px;">
+              <option value="manual">Manual</option>
+              <option value="auto">Auto (Round Robin)</option>
+              <option value="random">Random</option>
+            </select>
+            <button class="btn" style="height:38px" onclick="saveRule()">Save</button>
+          </div>
+        </section>
 
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
-  setTimeout(() => t.className = 'toast', 3000);
-}
+        <section>
+          <h3
+            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
+            Business Focus</h3>
+          <div style="display: flex; gap: 10px;">
+            <select id="companyFocus" class="form-select" style="flex:1; height: 38px;">
+              <option value="product">Product Focus</option>
+              <option value="service">Service Focus</option>
+            </select>
+            <button class="btn" style="height:38px" onclick="saveFocus()">Save</button>
+          </div>
+        </section>
 
-function showLogin(show) {
-  const overlay = document.getElementById('loginOverlay');
-  overlay.classList.toggle('show', !!show);
-}
+        <section>
+          <h3
+            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
+            Manage Catalog</h3>
+          <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <input type="text" id="newCatalogName" class="header-input" style="flex:1" placeholder="Item Name">
+            <input type="number" id="newCatalogPrice" class="header-input" style="width: 80px" placeholder="Price (₹)">
+            <button class="btn" onclick="addCatalogItem()">Add</button>
+          </div>
+          <div id="catalogList" class="grid"
+            style="max-height: 150px; overflow-y: auto; background: var(--bg); padding: 8px; border-radius: 8px;"></div>
+        </section>
 
-function applyUserUI() {
-  const userPill = document.getElementById('userPill');
-  const userName = document.getElementById('userName');
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (currentUser) {
-    userPill.style.display = 'inline-flex';
-    logoutBtn.style.display = 'inline-flex';
-    userName.textContent = currentUser.name + ' (' + currentUser.role + ')';
-  }
-}
+        <section>
+          <h3
+            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
+            Manage Agents</h3>
+          <div
+            style="display: grid; gap: 10px; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px;">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="newUserName" placeholder="Agent name" class="header-input">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="newUserEmail" placeholder="agent@example.com" class="header-input">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="newUserPassword" placeholder="••••••••" class="header-input">
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <select id="newUserRole" class="form-select">
+                <option value="agent">Agent</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button class="btn" style="width:100%; justify-content:center; height:40px" onclick="createUser()">Create
+              User</button>
+          </div>
+          <div id="usersList" class="grid" style="max-height: 200px; overflow-y: auto;"></div>
+        </section>
 
-async function checkAuth() {
-  try {
-    const res = await fetch('/api/auth/me');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.user.role !== 'admin') {
-        showToast('Admin login required', 'error');
+        <section style="margin-top:20px; padding-top:20px; border-top: 2px dashed var(--border);">
+          <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--danger);">⚠️ Database Maintenance</h3>
+          <p class="muted" style="font-size:12px; margin-bottom:12px">Purana data delete karein (Keep only today's
+            leads).</p>
+          <button class="btn" style="background:var(--danger); width:100%; justify-content:center"
+            onclick="cleanupLeads()">🧹 Cleanup Old Leads</button>
+        </section>
+      </div>
+
+      <div style="margin-top: 24px; text-align: center; border-top: 1px solid var(--border); padding-top: 16px;">
+        <button class="btn btn-ghost" onclick="toggleSettingsModal()">Close Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT MODAL -->
+  <div class="audit-overlay" id="auditOverlay">
+    <div class="audit-box" style="width: 500px">
+      <h2>Lead History</h2>
+      <div id="auditList" class="grid" style="max-height: 400px; overflow-y: auto; padding: 4px;"></div>
+      <div style="margin-top: 20px; text-align: center;">
+        <button class="btn btn-ghost" onclick="closeAudit()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let customers = [];
+    let agents = [];
+    let users = [];
+    let catalogItems = [];
+    let companyFocus = 'product';
+    let selectedUnassigned = new Set();
+    let ws = null;
+    let wsConnected = false;
+    let waReady = false;
+    let currentUser = null;
+
+    // --- UTILS ---
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    async function apiFetch(url, options = {}) {
+      const res = await fetch(url, options);
+      if (res.status === 401 || res.status === 403) {
         showLogin(true);
+        return null;
+      }
+      return res;
+    }
+
+    function showLogin(show) {
+      document.getElementById('loginOverlay').classList.toggle('show', !!show);
+    }
+
+    function toggleSettingsModal() {
+      document.getElementById('settingsModal').classList.toggle('show');
+    }
+
+    function getAgentNameById(id) {
+      const u = users.find(x => x.id === id);
+      return u ? u.name : 'Unknown';
+    }
+
+    // --- AUTH ---
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user.role !== 'admin') {
+            showToast('Admin access required', 'error');
+            showLogin(true);
+            return;
+          }
+          currentUser = data.user;
+          document.getElementById('userPill').style.display = 'inline-flex';
+          document.getElementById('userName').textContent = currentUser.name;
+          document.getElementById('logoutBtn').style.display = 'inline-flex';
+          showLogin(false);
+          startApp();
+        } else {
+          showLogin(true);
+        }
+      } catch (e) { showLogin(true); }
+    }
+
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const err = document.getElementById('loginError');
+      err.textContent = '';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success && data.user.role === 'admin') {
+          location.reload();
+        } else {
+          err.textContent = data.error || 'Login failed';
+        }
+      } catch (e) { err.textContent = 'Server error'; }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.reload();
+    }
+
+    // --- DATA LOADING ---
+    async function startApp() {
+      connectWS();
+      await loadUsers();
+      await loadSettings();
+      loadWhatsAppStatus();
+    }
+
+    async function loadUsers() {
+      const res = await apiFetch('/api/admin/users');
+      if (!res) return;
+      users = await res.json();
+      agents = users.filter(u => u.role === 'agent' && u.active);
+
+      // Update filter dropdown
+      const filterAgent = document.getElementById('filterAgent');
+      const currentVal = filterAgent.value;
+      filterAgent.innerHTML = '<option value="all">All Agents</option>' +
+        agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      filterAgent.value = currentVal || 'all';
+
+      renderUsers();
+      renderAll();
+    }
+
+    async function loadSettings() {
+      const res = await apiFetch('/api/admin/settings');
+      if (!res || !res.ok) return;
+      const data = await res.json();
+      document.getElementById('assignmentRule').value = data.assignment_rule || 'manual';
+      companyFocus = data.company_focus || 'product';
+      document.getElementById('companyFocus').value = companyFocus;
+      loadCatalog();
+    }
+
+    async function loadCatalog() {
+      const res = await apiFetch(`/api/admin/catalog?type=${companyFocus}`);
+      if (res && res.ok) {
+        catalogItems = await res.json();
+        renderCatalog();
+      }
+    }
+
+    function initFilterDate() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      document.getElementById('filterDate').value = `${y}-${m}-${d}`;
+    }
+
+    // --- WEBSOCKET ---
+    function connectWS() {
+      ws = new WebSocket(`ws://${location.host}`);
+      ws.onopen = () => { wsConnected = true; };
+      ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'init') {
+          customers = data.customers || [];
+          renderAll();
+        } else if (data.type === 'new_customer') {
+          customers.unshift(data.customer);
+          renderAll();
+        } else if (data.type === 'update_customer') {
+          const i = customers.findIndex(c => c.id === data.customer.id);
+          if (i > -1) customers[i] = data.customer;
+          renderAll();
+        } else if (data.type === 'delete_customer') {
+          customers = customers.filter(c => c.id !== data.id);
+          renderAll();
+        } else if (data.type === 'qr') {
+          showQRCode(data.qr);
+        } else if (data.type === 'ready') {
+          updateWAStatus(true);
+          closeQR();
+        }
+      };
+      ws.onclose = () => { wsConnected = false; setTimeout(connectWS, 3000); };
+    }
+
+    // --- RENDERING ---
+    function renderAll() {
+      const dateVal = document.getElementById('filterDate').value;
+      const agentVal = document.getElementById('filterAgent').value;
+      const searchVal = document.getElementById('filterSearch').value.toLowerCase();
+
+      // Filter by Search
+      let filtered = customers.filter(c =>
+        c.name.toLowerCase().includes(searchVal) ||
+        c.phone.includes(searchVal)
+      );
+
+      // Separate unassigned, assigned, and mature leads
+      const unassignedLeads = filtered.filter(c => !c.assigned_user_id);
+      let assignedLeads = filtered.filter(c => c.assigned_user_id);
+
+      // Apply agent filter to assigned leads
+      if (agentVal !== 'all') {
+        const agentId = parseInt(agentVal);
+        assignedLeads = assignedLeads.filter(c => c.assigned_user_id === agentId);
+      }
+
+      // Apply date filter to assigned leads
+      if (dateVal) {
+        const [y, m, d] = dateVal.split('-').map(Number);
+        assignedLeads = assignedLeads.filter(c => {
+          if (!c.assigned_at) return false;
+
+          // assigned_at might be ISO string (YYYY-MM-DD...) or locale string (DD/MM/YYYY, ...)
+          const datePart = c.assigned_at.split('T')[0].split(',')[0];
+          const parts = datePart.split(/[^0-9]/).filter(Boolean).map(Number);
+
+          if (parts.length >= 3) {
+            // Check both YYYY-MM-DD and DD-MM-YYYY formats just to be safe
+            if ((parts[0] === d && parts[1] === m && parts[2] === y) ||
+              (parts[2] === d && parts[1] === m && parts[0] === y)) {
+              return true;
+            }
+          }
+          return false;
+        });
+      }
+
+      const matureLeads = assignedLeads.filter(c => c.mature);
+      const activeAssignedLeads = assignedLeads.filter(c => !c.mature);
+
+      renderUnassigned(unassignedLeads);
+      renderAssigned(activeAssignedLeads);
+      renderMature(matureLeads);
+      updateStats();
+    }
+
+    function renderUnassigned(leads) {
+      const container = document.getElementById('unassignedColumn');
+      if (leads.length === 0) {
+        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">No unassigned leads</div>';
+        updateBulkActions();
         return;
       }
-      currentUser = data.user;
-      applyUserUI();
-      showLogin(false);
-      startApp();
-      return;
+
+      container.innerHTML = `
+        <label class="muted" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" onchange="toggleSelectAllUnassigned(this.checked)"> Select All
+        </label>
+        ${leads.map(c => `
+          <div class="lead-card">
+            <input type="checkbox" class="lead-check" onchange="toggleLeadSelection(${c.id}, this.checked)" ${selectedUnassigned.has(c.id) ? 'checked' : ''}>
+            <div class="card-name">${c.name}</div>
+            <div class="card-phone">📱 ${c.phone}</div>
+            <div class="card-details">${c.lastMessage ? `💬 ${c.lastMessage.substring(0, 60)}...` : 'New Lead'}</div>
+            <div class="card-actions">
+              <select class="form-select" onchange="assignLead(${c.id}, this.value)">
+                <option value="">Quick Assign...</option>
+                ${agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+              </select>
+              <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">🗑️ Delete</button>
+            </div>
+          </div>
+        `).join('')}
+      `;
+      updateBulkActions();
     }
-  } catch(e) {}
-  showLogin(true);
-}
 
-async function login() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const err = document.getElementById('loginError');
-  err.textContent = '';
-  if (!email || !password) {
-    err.textContent = 'Email aur password zaruri hai';
-    return;
-  }
-  try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.success && data.user.role === 'admin') {
-      currentUser = data.user;
-      applyUserUI();
-      showLogin(false);
-      startApp();
-    } else {
-      err.textContent = data.error || 'Login failed';
+    function renderAssigned(leads) {
+      const container = document.getElementById('assignedColumn');
+      document.getElementById('assignedCount').textContent = `${leads.length} leads`;
+
+      if (leads.length === 0) {
+        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">No assigned leads found</div>';
+        return;
+      }
+
+      container.innerHTML = leads.map(c => `
+        <div class="lead-card">
+          <div class="card-name">${c.name}</div>
+          <div class="card-phone">📱 ${c.phone}</div>
+          <div class="card-details">Agent: <strong>${getAgentNameById(c.assigned_user_id)}</strong></div>
+          <div class="card-details">Assigned: <span class="muted">${c.assigned_at ? c.assigned_at.split('T')[0] : '-'}</span></div>
+          <div class="card-actions">
+            <select class="form-select" onchange="assignLead(${c.id}, this.value, ${c.assigned_user_id})">
+              <option value="">Reassign...</option>
+              ${agents.map(a => `<option value="${a.id}" ${a.id == c.assigned_user_id ? 'disabled' : ''}>${a.name}</option>`).join('')}
+            </select>
+            <button class="btn btn-ghost btn-mini" onclick="openAudit(${c.id})">History</button>
+            <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">Delete</button>
+          </div>
+        </div>
+      `).join('');
     }
-  } catch(e) {
-    err.textContent = 'Server error';
-  }
-}
 
-async function logout() {
-  await fetch('/api/auth/logout', { method: 'POST' });
-  location.reload();
-}
+    function renderMature(leads) {
+      const container = document.getElementById('matureColumn');
+      document.getElementById('matureCount').textContent = `${leads.length} leads`;
 
-function connectWS() {
-  ws = new WebSocket('ws://localhost:3000');
-  ws.onopen = () => { wsConnected = true; };
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === 'init') {
-      customers = data.customers || [];
-      renderUnassigned();
-    } else if (data.type === 'new_customer') {
-      customers.unshift(data.customer);
-      renderUnassigned();
-    } else if (data.type === 'update_customer') {
-      const idx = customers.findIndex(c => c.id === data.customer.id);
-      if (idx !== -1) customers[idx] = data.customer;
-      renderUnassigned();
-    } else if (data.type === 'delete_customer') {
-      customers = customers.filter(c => c.id !== data.id);
-      renderUnassigned();
-    } else if (data.type === 'qr') {
-      showQRCode(data.qr);
-    } else if (data.type === 'ready') {
-      waReady = true;
-      updateWAStatus(true);
-      closeQR();
-      showToast('WhatsApp connected', 'success');
-    } else if (data.type === 'disconnected') {
-      waReady = false;
-      updateWAStatus(false);
-      showToast('WhatsApp disconnected', 'error');
+      if (leads.length === 0) {
+        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">Koi mature lead nahi</div>';
+        return;
+      }
+
+      container.innerHTML = leads.map(c => {
+        // Parse items
+        let itemsHtml = '<span class="muted" style="font-size:11px;">No items selected</span>';
+        try {
+          // The server already normalizes and parses items into c.items
+          let items = Array.isArray(c.items) ? c.items : [];
+
+          if (items.length > 0) {
+            // Handle array of strings or array of objects with 'name' and 'quantity'
+            const formattedItems = items.map(item => {
+              if (typeof item === 'string') return item;
+              let str = item.name ? item.name : '';
+              const qty = item.qty || item.quantity;
+              const price = item.price;
+              if (qty && qty > 1) str += ` (x${qty})`;
+              if (price !== undefined && price !== null && !isNaN(parseFloat(price))) str += ` - <span style="color:var(--green);font-weight:600">₹${price}</span>`;
+              return str || JSON.stringify(item);
+            });
+            itemsHtml = `<ul style="margin:4px 0 0 16px; padding:0; font-size:12px; color:var(--text); list-style-type:circle;">
+                          ${formattedItems.map(i => `<li>${i}</li>`).join('')}
+                         </ul>`;
+          }
+        } catch (e) {
+          itemsHtml = `<span class="muted" style="font-size:11px;">Error parsing items</span>`;
+        }
+
+        const addressLine = c.address ? c.address.substring(0, 100) + (c.address.length > 100 ? '...' : '') : '<span class="muted" style="font-style:italic">No Address</span>';
+
+        return `
+        <div class="lead-card mature-card">
+          <div style="position:absolute;top:10px;right:10px;color:var(--green);font-size:18px">✅</div>
+          <div class="card-name">${c.name}</div>
+          <div class="card-phone">📱 ${c.phone}</div>
+          <div class="card-details">Agent: <strong>${getAgentNameById(c.assigned_user_id)}</strong></div>
+          
+          <div style="margin:8px 0; padding:8px; background:rgba(0,0,0,0.02); border-left:3px solid var(--accent); border-radius:4px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-light); margin-bottom:2px">📍 Delivery Address:</div>
+            <div style="font-size:13px; color:var(--text); word-break: break-word;">${addressLine}</div>
+            
+            <div style="font-size:12px; font-weight:600; color:var(--text-light); margin-top:8px; margin-bottom:2px">🛒 Ordered Products:</div>
+            ${itemsHtml}
+          </div>
+
+          <div class="card-details" style="color:var(--green)">Mature At: <span class="muted">${c.mature_at ? c.mature_at.split('T')[0] : c.assigned_at ? c.assigned_at.split('T')[0] : '-'}</span></div>
+          <div class="card-actions" style="justify-content: flex-end; margin-top:10px;">
+            <button class="btn btn-ghost btn-mini" onclick="openAudit(${c.id})">History</button>
+            <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">Delete</button>
+          </div>
+        </div>
+      `}).join('');
     }
-  };
-  ws.onclose = () => { wsConnected = false; setTimeout(connectWS, 3000); };
-  ws.onerror = () => { showToast('Server connection error', 'error'); };
-}
 
-async function loadUsers() {
-  const res = await fetch('/api/admin/users');
-  users = await res.json();
-  agents = users.filter(u => u.role === 'agent' && u.active);
-  renderUsers();
-  renderUnassigned();
-}
+    function updateStats() {
+      const mature = customers.filter(c => c.mature).length;
+      const assigned = customers.filter(c => c.assigned_user_id).length;
+      const newLeads = customers.filter(c => !c.assigned_user_id).length;
 
-async function loadSettings() {
-  const res = await fetch('/api/admin/settings');
-  if (!res.ok) return;
-  const data = await res.json();
-  document.getElementById('assignmentRule').value = data.assignment_rule || 'manual';
-}
+      // Today's Total: Leads assigned OR created today
+      const now = new Date();
+      const d = String(now.getDate()).padStart(2, '0');
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const y = now.getFullYear();
+      const todayStr = `${d}/${m}/${y}`;
+      const todayISO = now.toISOString().split('T')[0];
 
-async function saveRule() {
-  const rule = document.getElementById('assignmentRule').value;
-  const res = await fetch('/api/admin/settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assignment_rule: rule })
-  });
-  if (res.ok) showToast('Rule updated', 'success');
-}
+      const todayTotal = customers.filter(c =>
+        (c.assigned_at && c.assigned_at.includes(todayStr)) ||
+        (c.time && c.time.startsWith(todayStr))
+      ).length;
 
-async function createUser() {
-  const name = document.getElementById('newUserName').value.trim();
-  const email = document.getElementById('newUserEmail').value.trim();
-  const password = document.getElementById('newUserPassword').value;
-  const role = document.getElementById('newUserRole').value;
-  if (!name || !email || !password) {
-    showToast('All fields required', 'error');
-    return;
-  }
-  const res = await fetch('/api/admin/users', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password, role })
-  });
-  const data = await res.json();
-  if (data.success) {
-    showToast('User created', 'success');
-    document.getElementById('newUserName').value = '';
-    document.getElementById('newUserEmail').value = '';
-    document.getElementById('newUserPassword').value = '';
-    await loadUsers();
-  } else {
-    showToast(data.error || 'Create failed', 'error');
-  }
-}
+      document.getElementById('statMature').textContent = mature;
+      document.getElementById('statAssigned').textContent = assigned;
+      document.getElementById('statUnassigned').textContent = newLeads;
+      document.getElementById('statToday').textContent = todayTotal;
+    }
 
-async function toggleActive(userId, active) {
-  const res = await fetch(`/api/admin/users/${userId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: !active })
-  });
-  if (res.ok) {
-    await loadUsers();
-  }
-}
+    // --- ACTIONS ---
+    function toggleLeadSelection(id, checked) {
+      if (checked) selectedUnassigned.add(id);
+      else selectedUnassigned.delete(id);
+      updateBulkActions();
+    }
 
-async function assignLead(customerId, userId) {
-  if (!userId) return;
-  const res = await fetch('/api/admin/assign', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ customerId, userId })
-  });
-  if (res.ok) {
-    showToast('Assigned', 'success');
-  }
-}
+    function toggleSelectAllUnassigned(checked) {
+      const unassigned = customers.filter(c => !c.assigned_user_id);
+      if (checked) {
+        unassigned.forEach(c => selectedUnassigned.add(c.id));
+      } else {
+        selectedUnassigned.clear();
+      }
+      renderAll();
+    }
 
-function renderUsers() {
-  const list = document.getElementById('usersList');
-  list.innerHTML = users.map(u => `
-    <div class="user-card">
-      <div><strong>${u.name}</strong> <span class="muted">(${u.role})</span></div>
-      <div class="muted">${u.email}</div>
-      <div class="row">
-        <button class="btn btn-ghost" onclick="toggleActive(${u.id}, ${u.active})">
-          ${u.active ? 'Deactivate' : 'Activate'}
-        </button>
-      </div>
-    </div>
-  `).join('');
-}
+    function updateBulkActions() {
+      const bar = document.getElementById('bulkActions');
+      const select = document.getElementById('bulkAssignSelect');
+      if (selectedUnassigned.size > 0) {
+        bar.style.display = 'flex';
+        select.innerHTML = '<option value="">Bulk Assign to...</option>' +
+          agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      } else {
+        bar.style.display = 'none';
+      }
+    }
 
-function renderUnassigned() {
-  const list = document.getElementById('unassignedList');
-  const unassigned = customers.filter(c => !c.assigned_user_id);
-  if (unassigned.length === 0) {
-    list.innerHTML = '<div class="muted">No unassigned leads</div>';
-    return;
-  }
-  list.innerHTML = unassigned.map(c => `
-    <div class="lead-card">
-      <div><strong>${c.name}</strong> <span class="muted">${c.phone}</span></div>
-      ${c.lastMessage ? `<div class="muted">Last: ${c.lastMessage}</div>` : ''}
-      <div class="row">
-        <select onchange="assignLead(${c.id}, this.value)">
-          <option value="">Assign to...</option>
-          ${agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-  `).join('');
-}
+    async function bulkAssign() {
+      const userId = document.getElementById('bulkAssignSelect').value;
+      if (!userId) return showToast('Agent select karein', 'error');
+      const ids = Array.from(selectedUnassigned);
 
-function updateWAStatus(ready) {
-  waReady = ready;
-  const btn = document.getElementById('waStatusBtn');
-  const txt = document.getElementById('waStatusText');
-  btn.className = 'wa-status ' + (ready ? 'connected' : 'disconnected');
-  txt.textContent = ready ? 'WhatsApp Connected' : 'WhatsApp Connect';
-}
-
-async function loadWhatsAppStatus() {
-  try {
-    const res = await fetch('/api/whatsapp/status');
-    if (!res.ok) return;
-    const data = await res.json();
-    updateWAStatus(!!data.ready);
-    if (data.qr) showQRCode(data.qr);
-  } catch(e) {}
-}
-
-function toggleQR() {
-  document.getElementById('qrOverlay').classList.add('show');
-  renderQRFromServer();
-  if (wsConnected) {
-    ws.send(JSON.stringify({ type: 'get_qr' }));
-  }
-}
-
-function closeQR() {
-  document.getElementById('qrOverlay').classList.remove('show');
-}
-
-async function showQRCode(qrString) {
-  document.getElementById('qrOverlay').classList.add('show');
-  const canvas = document.getElementById('qrCanvas');
-  if (window.QRCode && QRCode.toCanvas) {
-    try {
-      await QRCode.toCanvas(canvas, qrString, {
-        width: 220, margin: 2,
-        color: { dark: '#075E54', light: '#ffffff' }
+      const res = await apiFetch('/api/admin/assign-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerIds: ids, userId })
       });
-      return;
-    } catch(e) {}
-  }
-  await renderQRFromServer();
-}
-
-async function renderQRFromServer() {
-  const canvas = document.getElementById('qrCanvas');
-  try {
-    const res = await fetch('/api/whatsapp/qr-image');
-    const data = await res.json();
-    if (data && data.dataUrl) {
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-      };
-      img.src = data.dataUrl;
+      if (res && res.ok) {
+        selectedUnassigned.clear();
+        showToast('Bulk assign successful', 'success');
+        // WS will update UI
+      }
     }
-  } catch(e) {}
-}
 
-function startApp() {
-  connectWS();
-  loadUsers();
-  loadSettings();
-  loadWhatsAppStatus();
-}
+    async function bulkDelete() {
+      const ids = Array.from(selectedUnassigned);
+      if (ids.length === 0) return showToast('Koi lead select nahi ki', 'error');
 
-checkAuth();
-</script>
+      if (!confirm(`Kya aap waqai ${ids.length} leads delete karna chahte hain?`)) return;
+
+      const res = await apiFetch('/api/admin/delete-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerIds: ids })
+      });
+      if (res && res.ok) {
+        selectedUnassigned.clear();
+        showToast('Leads deleted successfully', 'success');
+      }
+    }
+
+    async function assignLead(customerId, userId, currentId) {
+      if (!userId || userId == currentId) return;
+      const res = await apiFetch('/api/admin/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId, userId })
+      });
+      if (res && res.ok) {
+        selectedUnassigned.delete(customerId);
+        showToast('Assigned successfully', 'success');
+      }
+    }
+
+    async function deleteLead(id) {
+      if (!confirm('Kya aap waqai is lead ko delete karna chahte hain?')) return;
+      const res = await apiFetch(`/api/customers/${id}`, { method: 'DELETE' });
+      if (res && res.ok) {
+        showToast('Lead deleted', 'success');
+        selectedUnassigned.delete(id);
+      }
+    }
+
+    async function saveRule() {
+      const rule = document.getElementById('assignmentRule').value;
+      const res = await apiFetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_rule: rule })
+      });
+      if (res && res.ok) showToast('Assignment rule saved', 'success');
+    }
+
+    async function saveFocus() {
+      const focus = document.getElementById('companyFocus').value;
+      const res = await apiFetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_focus: focus })
+      });
+      if (res && res.ok) {
+        companyFocus = focus;
+        loadCatalog();
+        showToast('Business focus updated', 'success');
+      }
+    }
+
+    async function addCatalogItem() {
+      const name = document.getElementById('newCatalogName').value.trim();
+      const price = parseFloat(document.getElementById('newCatalogPrice').value) || 0;
+      if (!name) return;
+      const res = await apiFetch('/api/admin/catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type: companyFocus, price })
+      });
+      if (res && res.ok) {
+        document.getElementById('newCatalogName').value = '';
+        document.getElementById('newCatalogPrice').value = '';
+        loadCatalog();
+        showToast('Item added to catalog', 'success');
+      }
+    }
+
+    async function deleteCatalogItem(id) {
+      if (!confirm('Delete this item?')) return;
+      const res = await apiFetch(`/api/admin/catalog/${id}`, { method: 'DELETE' });
+      if (res && res.ok) loadCatalog();
+    }
+
+    async function createUser() {
+      const name = document.getElementById('newUserName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const role = document.getElementById('newUserRole').value;
+      if (!name || !email || !password) return showToast('Fill all fields', 'error');
+
+      const res = await apiFetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role })
+      });
+      if (res && res.ok) {
+        showToast('User created', 'success');
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        loadUsers();
+      }
+    }
+
+    async function toggleUserStatus(id) {
+      const res = await apiFetch(`/api/admin/users/${id}/toggle`, { method: 'POST' });
+      if (res && res.ok) loadUsers();
+    }
+
+    function renderUsers() {
+      const list = document.getElementById('usersList');
+      if (!list) return;
+      if (users.length === 0) {
+        list.innerHTML = '<div class="muted" style="font-size:12px;text-align:center">No users found</div>';
+        return;
+      }
+      list.innerHTML = users.map(u => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee">
+          <div>
+            <div style="font-weight:700; font-size:13px; color:var(--accent)">${u.name} <span class="muted" style="font-size:11px">(${u.role})</span></div>
+            <div style="font-size:11px; color:var(--text-light)">${u.email}</div>
+          </div>
+          <button class="btn btn-mini ${u.active ? 'btn-ghost' : ''}" style="${u.active ? 'color:var(--danger)' : 'background:var(--green);color:white'}" onclick="toggleUserStatus(${u.id})">
+            ${u.active ? 'Disable' : 'Enable'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderCatalog() {
+      const list = document.getElementById('catalogList');
+      if (catalogItems.length === 0) {
+        list.innerHTML = '<div class="muted" style="font-size:12px;text-align:center">No items in catalog</div>';
+        return;
+      }
+      list.innerHTML = catalogItems.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee">
+          <span style="font-size:13px; font-weight:600">${item.name} <span style="color:var(--green); margin-left:8px; font-weight:700">₹${item.price || 0}</span></span>
+          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="deleteCatalogItem(${item.id})">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    async function cleanupLeads() {
+      if (!confirm('Kya aap waqai aaj se purani sabhi leads delete karna chahte hain? Ye action wapas nahi liya ja sakta.')) return;
+      const res = await apiFetch('/api/admin/cleanup-leads', { method: 'POST' });
+      if (res && res.ok) {
+        const data = await res.json();
+        showToast(`${data.count} purani leads delete kar di gayi hain`, 'success');
+      }
+    }
+
+    // --- MODALS ---
+    async function openAudit(customerId) {
+      const list = document.getElementById('auditList');
+      list.innerHTML = '<div class="muted">Loading history...</div>';
+      document.getElementById('auditOverlay').classList.add('show');
+      try {
+        const res = await apiFetch(`/api/admin/audit?customerId=${customerId}`);
+        const data = await res.json();
+        if (data.success) {
+          list.innerHTML = data.logs.map(log => `
+            <div class="audit-item" style="padding:10px; border-bottom:1px solid var(--border)">
+              <div style="font-weight:800;font-size:12px;color:var(--accent)">${log.action.toUpperCase()}</div>
+              <div class="muted" style="font-size:11px">${log.time}</div>
+              <div style="font-size:12px;margin-top:4px">${log.note || ''}</div>
+            </div>
+          `).join('');
+        } else {
+          list.innerHTML = '<div class="muted">No history found</div>';
+        }
+      } catch (e) { list.innerHTML = 'Error loading history'; }
+    }
+
+    function closeAudit() { document.getElementById('auditOverlay').classList.remove('show'); }
+
+    function updateWAStatus(ready) {
+      waReady = ready;
+      const btn = document.getElementById('waStatusBtn');
+      btn.className = 'wa-status ' + (ready ? 'connected' : 'disconnected');
+      document.getElementById('waStatusText').textContent = ready ? 'WhatsApp Connected' : 'WhatsApp Connect';
+    }
+
+    async function loadWhatsAppStatus() {
+      const res = await fetch('/api/whatsapp/status');
+      if (res.ok) {
+        const data = await res.json();
+        updateWAStatus(!!data.ready);
+        if (data.qr && !waReady) showQRCode(data.qr);
+      }
+    }
+
+    function toggleQR() {
+      document.getElementById('qrOverlay').classList.add('show');
+      renderQRFromServer();
+      if (wsConnected) ws.send(JSON.stringify({ type: 'get_qr' }));
+    }
+
+    function closeQR() { document.getElementById('qrOverlay').classList.remove('show'); }
+
+    async function showQRCode(qrString) {
+      document.getElementById('qrOverlay').classList.add('show');
+      const canvas = document.getElementById('qrCanvas');
+      if (window.QRCode) {
+        QRCode.toCanvas(canvas, qrString, { width: 220, margin: 2 });
+      }
+    }
+
+    async function renderQRFromServer() {
+      const res = await fetch('/api/whatsapp/qr-image');
+      const data = await res.json();
+      if (data && data.dataUrl) {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.getElementById('qrCanvas');
+          canvas.width = 220; canvas.height = 220;
+          canvas.getContext('2d').drawImage(img, 0, 0, 220, 220);
+        };
+        img.src = data.dataUrl;
+      }
+    }
+
+    // --- START ---
+    window.onload = () => {
+      initFilterDate();
+      checkAuth();
+    };
+  </script>
 </body>
+
 </html>
