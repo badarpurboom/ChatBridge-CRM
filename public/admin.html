@@ -479,6 +479,40 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      z-index: 1000;
+      box-shadow: var(--shadow-lg);
+      display: none;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    .toast.error {
+      background: var(--danger);
+    }
+
+    .toast.success {
+      background: var(--green-dark);
+    }
+
+    .muted {
+      color: var(--text-light);
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -490,13 +524,13 @@
       <h2>Admin Login</h2>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@example.com">
+        <input type="email" id="loginEmail" placeholder="admin@example.com" class="header-input">
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••">
+        <input type="password" id="loginPassword" placeholder="••••••••" class="header-input">
       </div>
-      <button class="btn" onclick="login()">Login</button>
+      <button class="btn" onclick="login()" style="width:100%; justify-content:center">Login</button>
       <div class="login-error" id="loginError"></div>
     </div>
   </div>
@@ -508,7 +542,9 @@
       <h1>Admin <span>Panel</span></h1>
     </div>
     <div class="header-actions">
-      <div class="stat-pill" id="userPill" style="display:none">User: <span id="userName">-</span></div>
+      <div class="stat-pill" id="userPill" style="display:none; color:white; font-size:12px; font-weight:700">User:
+        <span id="userName">-</span>
+      </div>
       <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
       <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
         <div class="status-dot"></div>
@@ -523,8 +559,8 @@
       <h2>WhatsApp Connect</h2>
       <p class="muted">QR scan karke WhatsApp connect karo</p>
       <canvas id="qrCanvas"></canvas>
-      <div style="margin-top:12px">
-        <button class="btn" onclick="closeQR()">Close</button>
+      <div style="margin-top:12px; text-align:center">
+        <button class="btn btn-ghost" onclick="closeQR()">Close</button>
       </div>
     </div>
   </div>
@@ -540,12 +576,8 @@
         <span class="stat-value" id="statAssigned">0</span>
       </div>
       <div class="stat-card">
-        <span class="stat-label">New / Unassigned</span>
+        <span class="stat-label">Unassigned</span>
         <span class="stat-value new" id="statUnassigned">0</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Today Total</span>
-        <span class="stat-value" id="statToday" style="color:var(--accent)">0</span>
       </div>
     </div>
 
@@ -573,174 +605,127 @@
     <div class="admin-column">
       <div class="column-header">
         <h2>🟡 New Leads (Unassigned)</h2>
-        <div class="row" id="bulkActions" style="display:none">
-          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="bulkDelete()">Delete
-            Selected</button>
-          <select id="bulkAssignSelect" class="form-select">
-            <option value="">Assign to...</option>
-          </select>
-          <button class="btn btn-mini" onclick="bulkAssign()">Assign Selected</button>
+        <div class="row" id="bulkActions" style="display:none; gap:10px; align-items:center">
+          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="bulkDelete()">Delete</button>
+          <select id="bulkAssignSelect" class="form-select"></select>
+          <button class="btn btn-mini" onclick="bulkAssign()">Assign</button>
         </div>
       </div>
-      <div class="column-scroll" id="unassignedColumn">
-        <!-- Leads will be rendered here -->
-      </div>
+      <div class="column-scroll" id="unassignedColumn"></div>
     </div>
 
-    <!-- RIGHT COLUMN: ASSIGNED / IN-PROGRESS -->
+    <!-- MIDDLE COLUMN: ASSIGNED -->
     <div class="admin-column">
       <div class="column-header">
         <h2>✅ Assigned Leads</h2>
         <span class="muted" id="assignedCount">0 leads</span>
       </div>
-      <div class="column-scroll" id="assignedColumn">
-        <!-- Leads will be rendered here -->
-      </div>
+      <div class="column-scroll" id="assignedColumn"></div>
     </div>
 
-    <!-- THIRD COLUMN: MATURE / ORDERED -->
+    <!-- RIGHT COLUMN: MATURE -->
     <div class="admin-column">
       <div class="column-header">
         <h2>🟢 Mature (Ordered)</h2>
         <span class="muted" id="matureCount">0 leads</span>
       </div>
-      <div class="column-scroll" id="matureColumn">
-        <!-- Mature leads will be rendered here -->
-      </div>
+      <div class="column-scroll" id="matureColumn"></div>
     </div>
   </div>
 
-  <!-- PAGINATION CONTROLS -->
+  <!-- PAGINATION -->
   <div
-    style="display: flex; justify-content: center; gap: 15px; padding: 10px; background: white; border-top: 1px solid var(--border);">
-    <button class="btn btn-ghost" id="btnPrevPage" onclick="changePage(-1)" disabled>◀ Previous</button>
-    <span style="font-size: 14px; font-weight: 700; color: var(--text); padding-top: 5px;" id="pageIndicator">Page
-      1</span>
+    style="display: flex; justify-content: center; gap: 15px; padding: 12px; background: white; border-top: 1px solid var(--border);">
+    <button class="btn btn-ghost" id="btnPrevPage" onclick="changePage(-1)">◀ Previous</button>
+    <span style="font-size: 14px; font-weight: 700; color: var(--text); padding: 8px 0" id="pageIndicator">Page 1</span>
     <button class="btn btn-ghost" id="btnNextPage" onclick="changePage(1)">Next ▶</button>
-    <select id="limitSelect" class="form-select" onchange="changeLimit(this.value)" style="margin-left: 10px;">
+    <select id="limitSelect" class="form-select" onchange="changeLimit(this.value)">
       <option value="50">50 / page</option>
       <option value="100">100 / page</option>
       <option value="500">500 / page</option>
     </select>
   </div>
 
-  <!-- SETTINGS MODAL (HIDDEN BY DEFAULT) -->
+  <!-- SETTINGS MODAL -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-box" style="width: 500px; max-height: 85vh; overflow-y: auto;">
       <h2>⚙️ System Settings</h2>
-
       <div style="display: grid; gap: 24px;">
         <section>
-          <h3
-            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
-            Lead Assignment Rule</h3>
-          <div style="display: flex; gap: 10px;">
-            <select id="assignmentRule" class="form-select" style="flex:1; height: 38px;">
+          <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
+            Assignment Rule</h3>
+          <div style="display:flex; gap:10px">
+            <select id="assignmentRule" class="form-select" style="flex:1">
               <option value="manual">Manual</option>
               <option value="auto">Auto (Round Robin)</option>
               <option value="random">Random</option>
             </select>
-            <button class="btn" style="height:38px" onclick="saveRule()">Save</button>
+            <button class="btn" onclick="saveRule()">Save</button>
           </div>
         </section>
 
         <section>
-          <h3
-            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
+          <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
             Business Focus</h3>
-          <div style="display: flex; gap: 10px;">
-            <select id="companyFocus" class="form-select" style="flex:1; height: 38px;">
+          <div style="display:flex; gap:10px">
+            <select id="companyFocus" class="form-select" style="flex:1">
               <option value="product">Product Focus</option>
               <option value="service">Service Focus</option>
             </select>
-            <button class="btn" style="height:38px" onclick="saveFocus()">Save</button>
+            <button class="btn" onclick="saveFocus()">Save</button>
           </div>
         </section>
 
         <section>
-          <h3
-            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
-            Manage Catalog</h3>
-          <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+          <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
+            Catalog</h3>
+          <div style="display:flex; gap:10px; margin-bottom:12px">
             <input type="text" id="newCatalogName" class="header-input" style="flex:1" placeholder="Item Name">
-            <input type="number" id="newCatalogPrice" class="header-input" style="width: 80px" placeholder="Price (₹)">
+            <input type="number" id="newCatalogPrice" class="header-input" style="width:80px" placeholder="Price">
             <button class="btn" onclick="addCatalogItem()">Add</button>
           </div>
           <div id="catalogList" class="grid"
-            style="max-height: 150px; overflow-y: auto; background: var(--bg); padding: 8px; border-radius: 8px;"></div>
+            style="max-height:150px; overflow-y:auto; background:var(--bg); padding:8px; border-radius:8px"></div>
         </section>
 
         <section>
-          <h3
-            style="font-size: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 4px;">
-            Manage Agents</h3>
-          <div
-            style="display: grid; gap: 10px; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px;">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input type="text" id="newUserName" placeholder="Agent name" class="header-input">
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="newUserEmail" placeholder="agent@example.com" class="header-input">
-            </div>
-            <div class="form-group">
-              <label>Password</label>
-              <input type="password" id="newUserPassword" placeholder="••••••••" class="header-input">
-            </div>
-            <div class="form-group">
-              <label>Role</label>
+          <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
+            Create New User</h3>
+          <div class="grid" style="gap:10px">
+            <input type="text" id="newUserName" class="header-input" placeholder="Full Name">
+            <input type="email" id="newUserEmail" class="header-input" placeholder="Email Address">
+            <div style="display:flex; gap:10px">
+              <input type="password" id="newUserPassword" class="header-input" style="flex:1" placeholder="Password">
               <select id="newUserRole" class="form-select">
                 <option value="agent">Agent</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <button class="btn" style="width:100%; justify-content:center; height:40px" onclick="createUser()">Create
-              User</button>
+            <button class="btn" onclick="createUser()" style="justify-content:center">Create User</button>
           </div>
-          <div id="usersList" class="grid" style="max-height: 200px; overflow-y: auto;"></div>
         </section>
 
-        <section style="margin-top:20px; padding-top:20px; border-top: 2px dashed var(--border);">
-          <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--danger);">⚠️ Database Maintenance</h3>
-          <p class="muted" style="font-size:12px; margin-bottom:12px">Purana data delete karein (Keep only today's
-            leads).</p>
-          <button class="btn" style="background:var(--danger); width:100%; justify-content:center"
-            onclick="cleanupLeads()">🧹 Cleanup Old Leads</button>
+        <section>
+          <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
+            Users</h3>
+          <div id="usersList" class="grid" style="max-height:200px; overflow-y:auto"></div>
         </section>
       </div>
-
-      <div style="margin-top: 24px; text-align: center; border-top: 1px solid var(--border); padding-top: 16px;">
-        <button class="btn btn-ghost" onclick="toggleSettingsModal()">Close Settings</button>
+      <div style="margin-top:24px; text-align:center; border-top:1px solid var(--border); padding-top:16px">
+        <button class="btn btn-ghost" onclick="toggleSettingsModal()">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- AUDIT MODAL -->
-  <div class="audit-overlay" id="auditOverlay">
-    <div class="audit-box" style="width: 500px">
-      <h2>Lead History</h2>
-      <div id="auditList" class="grid" style="max-height: 400px; overflow-y: auto; padding: 4px;"></div>
-      <div style="margin-top: 20px; text-align: center;">
-        <button class="btn btn-ghost" onclick="closeAudit()">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
 
   <script>
     let customers = [];
-    let unassignedLeads = [];
-    let assignedLeads = [];
-    let matureLeads = [];
-
-    let paginationState = { page: 1, limit: 50, total: 0, totalPages: 1 };
-
-    let agents = [];
     let users = [];
     let catalogItems = [];
     let companyFocus = 'product';
+    let paginationState = { page: 1, limit: 50, total: 0, totalPages: 1 };
     let selectedUnassigned = new Set();
     let ws = null;
     let wsConnected = false;
@@ -750,7 +735,6 @@
     // --- UTILS ---
     function showToast(msg, type = '') {
       const t = document.getElementById('toast');
-      if (!t) return;
       t.textContent = msg;
       t.className = 'toast show ' + type;
       setTimeout(() => t.className = 'toast', 3000);
@@ -771,11 +755,6 @@
 
     function toggleSettingsModal() {
       document.getElementById('settingsModal').classList.toggle('show');
-    }
-
-    function getAgentNameById(id) {
-      const u = users.find(x => x.id === id);
-      return u ? u.name : 'Unknown';
     }
 
     // --- AUTH ---
@@ -805,7 +784,6 @@
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const err = document.getElementById('loginError');
-      err.textContent = '';
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -832,21 +810,17 @@
       await loadUsers();
       await loadSettings();
       loadWhatsAppStatus();
+      initFilterDate();
     }
 
     async function loadUsers() {
       const res = await apiFetch('/api/admin/users');
       if (!res) return;
       users = await res.json();
-      agents = users.filter(u => u.role === 'agent' && u.active);
-
-      // Update filter dropdown
+      const agents = users.filter(u => u.role === 'agent' && u.active);
       const filterAgent = document.getElementById('filterAgent');
-      const currentVal = filterAgent.value;
       filterAgent.innerHTML = '<option value="all">All Agents</option>' +
         agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-      filterAgent.value = currentVal || 'all';
-
       renderUsers();
       fetchPaginatedLeads();
     }
@@ -883,24 +857,12 @@
       ws.onopen = () => { wsConnected = true; };
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
-        if (data.type === 'init') {
-          // Note: customers are no longer sent in 'init' for performance
-          fetchPaginatedLeads();
-        } else if (data.type === 'new_customer') {
-          // If on page 1, show immediately. Otherwise, maybe just update stats
-          if (paginationState.page === 1) {
-            unassignedLeads.unshift(data.customer);
-            renderUnassigned(unassignedLeads);
-          }
-        } else if (data.type === 'update_customer') {
-          fetchPaginatedLeads(); // Simple approach: just refresh to keep ordered structure accurate
-        } else if (data.type === 'delete_customer') {
-          fetchPaginatedLeads();
-        } else if (data.type === 'qr') {
-          showQRCode(data.qr);
-        } else if (data.type === 'ready') {
+        if (data.type === 'qr') showQRCode(data.qr);
+        else if (data.type === 'ready') {
           updateWAStatus(true);
           closeQR();
+        } else {
+          fetchPaginatedLeads();
         }
       };
       ws.onclose = () => { wsConnected = false; setTimeout(connectWS, 3000); };
@@ -919,12 +881,6 @@
       if (agentVal && agentVal !== 'all') q.append('agentId', agentVal);
       if (searchVal) q.append('search', searchVal);
 
-      // We fetch unassigned, assigned, mature separately for the columns, 
-      // or we can fetch a combined pool and let the frontend split it.
-      // However, to fill 3 columns with up to `limit` items *each*, we can either fire 3 queries
-      // or rely on a generic fetch and sort visually. Given the layout, separate column fetching is more robust.
-      // For simplicity matching the previous code exactly, let's fetch "limit" items IN TOTAL and then separate them.
-      // This means a page of "50" might have 10 unassigned, 30 assigned, 10 mature.
       try {
         const res = await apiFetch(`/api/customers/paginated?${q.toString()}`);
         if (res && res.ok) {
@@ -934,7 +890,6 @@
           document.getElementById('pageIndicator').textContent = `Page ${paginationState.page} of ${paginationState.totalPages || 1} (${paginationState.total} total)`;
           document.getElementById('btnPrevPage').disabled = paginationState.page <= 1;
           document.getElementById('btnNextPage').disabled = paginationState.page >= paginationState.totalPages;
-
           renderAll();
         }
       } catch (e) { console.error(e) }
@@ -952,252 +907,103 @@
     }
 
     // --- RENDERING ---
-    // Modified renderAll since we rely on the paginated API for filtering.
     function renderAll() {
-      // The API already returned the paginated, filtered result in "customers".
-      // We just need to segment them.
-      unassignedLeads = customers.filter(c => !c.assigned_user_id);
-      assignedLeads = customers.filter(c => c.assigned_user_id && !c.mature);
-      matureLeads = customers.filter(c => c.mature);
+      const unassigned = customers.filter(c => !c.assigned_user_id);
+      const assigned = customers.filter(c => c.assigned_user_id && !c.mature);
+      const mature = customers.filter(c => c.mature);
 
-      renderUnassigned(unassignedLeads);
-      renderAssigned(assignedLeads);
-      renderMature(matureLeads);
+      renderColumn('unassignedColumn', unassigned, true);
+      renderColumn('assignedColumn', assigned);
+      renderColumn('matureColumn', mature);
 
-      // updateStats cannot evaluate the entire DB on the frontend anymore.
-      // But we can update the column counts. Today stat might be inaccurate without a separate API endpoint.
-      document.getElementById('assignedCount').textContent = assignedLeads.length + " leads (this page)";
-      document.getElementById('matureCount').textContent = matureLeads.length + " leads (this page)";
+      document.getElementById('assignedCount').textContent = `${assigned.length} leads`;
+      document.getElementById('matureCount').textContent = `${mature.length} leads`;
+      document.getElementById('statUnassigned').textContent = unassigned.length;
+      document.getElementById('statAssigned').textContent = assigned.length;
+      document.getElementById('statMature').textContent = mature.length;
     }
 
-    function renderUnassigned(leads) {
-      const container = document.getElementById('unassignedColumn');
-      if (leads.length === 0) {
-        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">No unassigned leads</div>';
-        updateBulkActions();
-        return;
-      }
-
-      container.innerHTML = `
-        <label class="muted" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer">
-          <input type="checkbox" onchange="toggleSelectAllUnassigned(this.checked)"> Select All
-        </label>
-        ${leads.map(c => `
-          <div class="lead-card">
-            <input type="checkbox" class="lead-check" onchange="toggleLeadSelection(${c.id}, this.checked)" ${selectedUnassigned.has(c.id) ? 'checked' : ''}>
-            <div class="card-name">${c.name}</div>
-            <div class="card-phone">📱 ${c.phone}</div>
-            <div class="card-details">${c.lastMessage ? `💬 ${c.lastMessage.substring(0, 60)}...` : 'New Lead'}</div>
-            <div class="card-actions">
-              <select class="form-select" onchange="assignLead(${c.id}, this.value)">
-                <option value="">Quick Assign...</option>
-                ${agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
-              </select>
-              <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">🗑️ Delete</button>
-            </div>
-          </div>
-        `).join('')
-        }
-      `;
-      updateBulkActions();
+    function getAgentName(id) {
+      const u = users.find(x => x.id === id);
+      return u ? u.name : 'Unknown';
     }
 
-    function renderAssigned(leads) {
-      const container = document.getElementById('assignedColumn');
-      document.getElementById('assignedCount').textContent = `${leads.length} leads`;
-
+    function renderColumn(id, leads, isUnassigned = false) {
+      const container = document.getElementById(id);
       if (leads.length === 0) {
-        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">No assigned leads found</div>';
+        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">No leads found</div>';
         return;
       }
 
       container.innerHTML = leads.map(c => `
-        <div class="lead-card">
+        <div class="lead-card ${c.mature ? 'mature-card' : ''}">
           <div class="card-name">${c.name}</div>
           <div class="card-phone">📱 ${c.phone}</div>
-          <div class="card-details">Agent: <strong>${getAgentNameById(c.assigned_user_id)}</strong></div>
-          <div class="card-details">Assigned: <span class="muted">${c.assigned_at ? c.assigned_at.split('T')[0] : '-'}</span></div>
+          <div class="card-details">${c.assigned_user_id ? 'Agent: ' + getAgentName(c.assigned_user_id) : 'Unassigned'}</div>
+          ${isUnassigned ? `
+            <div class="card-actions">
+              <select class="form-select" onchange="assignLead(${c.id}, this.value)">
+                <option value="">Assign to...</option>
+                ${users.filter(u => u.role === 'agent' && u.active).map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+              </select>
+            </div>
+          ` : ''}
           <div class="card-actions">
-            <select class="form-select" onchange="assignLead(${c.id}, this.value, ${c.assigned_user_id})">
-              <option value="">Reassign...</option>
-              ${agents.map(a => `<option value="${a.id}" ${a.id == c.assigned_user_id ? 'disabled' : ''}>${a.name}</option>`).join('')}
-            </select>
-            <button class="btn btn-ghost btn-mini" onclick="openAudit(${c.id})">History</button>
             <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">Delete</button>
           </div>
         </div>
       `).join('');
     }
 
-    function renderMature(leads) {
-      const container = document.getElementById('matureColumn');
-      document.getElementById('matureCount').textContent = \`\${leads.length} leads\`;
-
-      if (leads.length === 0) {
-        container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">Koi mature lead nahi</div>';
-        return;
-      }
-
-      container.innerHTML = leads.map(c => {
-        // Parse items
-        let itemsHtml = '<span class="muted" style="font-size:11px;">No items selected</span>';
-        try {
-          // The server already normalizes and parses items into c.items
-          let items = Array.isArray(c.items) ? c.items : [];
-
-          if (items.length > 0) {
-            // Handle array of strings or array of objects with 'name' and 'quantity'
-            const formattedItems = items.map(item => {
-              if (typeof item === 'string') return item;
-              let str = item.name ? item.name : '';
-              const qty = item.qty || item.quantity;
-              const price = item.price;
-              if (qty && qty > 1) str += \` (x\${qty})\`;
-              if (price !== undefined && price !== null && !isNaN(parseFloat(price))) str += \` - <span style="color:var(--green);font-weight:600">₹\${price}</span>\`;
-              return str || JSON.stringify(item);
-            });
-            itemsHtml = \`<ul style="margin:4px 0 0 16px; padding:0; font-size:12px; color:var(--text); list-style-type:circle;">
-              \${formattedItems.map(i => \`<li>\${i}</li>\`).join('')}
-            </ul>\`;
-          }
-        } catch (e) {
-          itemsHtml = '<span class="muted" style="font-size:11px;">Error parsing items</span>';
-        }
-
-        const addressLine = c.address ? c.address.substring(0, 100) + (c.address.length > 100 ? '...' : '') : '<span class="muted" style="font-style:italic">No Address</span>';
-
-        return \`
-        <div class="lead-card mature-card">
-          <div style="position:absolute;top:10px;right:10px;color:var(--green);font-size:18px">✅</div>
-          <div class="card-name">\${c.name}</div>
-          <div class="card-phone">📱 \${c.phone}</div>
-          <div class="card-details">Agent: <strong>\${getAgentNameById(c.assigned_user_id)}</strong></div>
-          
-          <div style="margin:8px 0; padding:8px; background:rgba(0,0,0,0.02); border-left:3px solid var(--accent); border-radius:4px;">
-            <div style="font-size:12px; font-weight:600; color:var(--text-light); margin-bottom:2px">📍 Delivery Address:</div>
-            <div style="font-size:13px; color:var(--text); word-break: break-word;">\${addressLine}</div>
-            
-            <div style="font-size:12px; font-weight:600; color:var(--text-light); margin-top:8px; margin-bottom:2px">🛒 Ordered Products:</div>
-            \${itemsHtml}
+    function renderUsers() {
+      const list = document.getElementById('usersList');
+      list.innerHTML = users.map(u => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee">
+          <div>
+            <div style="font-weight:700; font-size:13px">${u.name} (${u.role})</div>
+            <div class="muted">${u.email}</div>
           </div>
-
-          <div class="card-details" style="color:var(--green)">Mature At: <span class="muted">\${c.mature_at ? c.mature_at.split('T')[0] : c.assigned_at ? c.assigned_at.split('T')[0] : '-'}</span></div>
-          <div class="card-actions" style="justify-content: flex-end; margin-top:10px;">
-            <button class="btn btn-ghost btn-mini" onclick="openAudit(\${c.id})">History</button>
-            <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(\${c.id})">Delete</button>
-          </div>
+          <button class="btn btn-mini ${u.active ? 'btn-ghost' : ''}" onclick="toggleUserStatus(${u.id})">${u.active ? 'Disable' : 'Enable'}</button>
         </div>
-        \`;
-      }).join('');
+      `).join('');
     }
 
-    function updateStats() {
-      const mature = customers.filter(c => c.mature).length;
-      const assigned = customers.filter(c => c.assigned_user_id).length;
-      const newLeads = customers.filter(c => !c.assigned_user_id).length;
-
-      // Today's Total: Leads assigned OR created today
-      const now = new Date();
-      const d = String(now.getDate()).padStart(2, '0');
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const y = now.getFullYear();
-      const todayStr = `${ d } /${m}/${ y } `;
-      const todayISO = now.toISOString().split('T')[0];
-
-      const todayTotal = customers.filter(c =>
-        (c.assigned_at && c.assigned_at.includes(todayStr)) ||
-        (c.time && c.time.startsWith(todayStr))
-      ).length;
-
-      document.getElementById('statMature').textContent = mature;
-      document.getElementById('statAssigned').textContent = assigned;
-      document.getElementById('statUnassigned').textContent = newLeads;
-      document.getElementById('statToday').textContent = todayTotal;
+    function renderCatalog() {
+      const list = document.getElementById('catalogList');
+      list.innerHTML = catalogItems.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee">
+          <span style="font-size:13px">${item.name} - ₹${item.price}</span>
+          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="deleteCatalogItem(${item.id})">Delete</button>
+        </div>
+      `).join('');
     }
 
     // --- ACTIONS ---
-    function toggleLeadSelection(id, checked) {
-      if (checked) selectedUnassigned.add(id);
-      else selectedUnassigned.delete(id);
-      updateBulkActions();
-    }
-
-    function toggleSelectAllUnassigned(checked) {
-      const unassigned = customers.filter(c => !c.assigned_user_id);
-      if (checked) {
-        unassigned.forEach(c => selectedUnassigned.add(c.id));
-      } else {
-        selectedUnassigned.clear();
-      }
-      renderAll();
-    }
-
-    function updateBulkActions() {
-      const bar = document.getElementById('bulkActions');
-      const select = document.getElementById('bulkAssignSelect');
-      if (selectedUnassigned.size > 0) {
-        bar.style.display = 'flex';
-        select.innerHTML = '<option value="">Bulk Assign to...</option>' +
-          agents.map(a => `< option value = "${a.id}" > ${ a.name }</option > `).join('');
-      } else {
-        bar.style.display = 'none';
-      }
-    }
-
-    async function bulkAssign() {
-      const userId = document.getElementById('bulkAssignSelect').value;
-      if (!userId) return showToast('Agent select karein', 'error');
-      const ids = Array.from(selectedUnassigned);
-
-      const res = await apiFetch('/api/admin/assign-bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerIds: ids, userId })
-      });
-      if (res && res.ok) {
-        selectedUnassigned.clear();
-        showToast('Bulk assign successful', 'success');
-        // WS will update UI
-      }
-    }
-
-    async function bulkDelete() {
-      const ids = Array.from(selectedUnassigned);
-      if (ids.length === 0) return showToast('Koi lead select nahi ki', 'error');
-
-      if (!confirm(`Kya aap waqai ${ ids.length } leads delete karna chahte hain ? `)) return;
-
-      const res = await apiFetch('/api/admin/delete-bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerIds: ids })
-      });
-      if (res && res.ok) {
-        selectedUnassigned.clear();
-        showToast('Leads deleted successfully', 'success');
-      }
-    }
-
-    async function assignLead(customerId, userId, currentId) {
-      if (!userId || userId == currentId) return;
+    async function assignLead(customerId, userId) {
+      if (!userId) return;
       const res = await apiFetch('/api/admin/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customerId, userId })
       });
       if (res && res.ok) {
-        selectedUnassigned.delete(customerId);
         showToast('Assigned successfully', 'success');
+        fetchPaginatedLeads();
       }
     }
 
     async function deleteLead(id) {
-      if (!confirm('Kya aap waqai is lead ko delete karna chahte hain?')) return;
-      const res = await apiFetch(`/ api / customers / ${ id } `, { method: 'DELETE' });
+      if (!confirm('Delete this lead?')) return;
+      const res = await apiFetch(`/api/customers/${id}`, { method: 'DELETE' });
       if (res && res.ok) {
         showToast('Lead deleted', 'success');
-        selectedUnassigned.delete(id);
+        fetchPaginatedLeads();
       }
+    }
+
+    async function toggleUserStatus(id) {
+      const res = await apiFetch(`/api/admin/users/${id}/toggle`, { method: 'POST' });
+      if (res && res.ok) loadUsers();
     }
 
     async function saveRule() {
@@ -1207,7 +1013,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignment_rule: rule })
       });
-      if (res && res.ok) showToast('Assignment rule saved', 'success');
+      if (res && res.ok) showToast('Settings saved', 'success');
     }
 
     async function saveFocus() {
@@ -1220,7 +1026,7 @@
       if (res && res.ok) {
         companyFocus = focus;
         loadCatalog();
-        showToast('Business focus updated', 'success');
+        showToast('Focus updated', 'success');
       }
     }
 
@@ -1237,13 +1043,12 @@
         document.getElementById('newCatalogName').value = '';
         document.getElementById('newCatalogPrice').value = '';
         loadCatalog();
-        showToast('Item added to catalog', 'success');
+        showToast('Item added', 'success');
       }
     }
 
     async function deleteCatalogItem(id) {
-      if (!confirm('Delete this item?')) return;
-      const res = await apiFetch(`/ api / admin / catalog / ${ id } `, { method: 'DELETE' });
+      const res = await apiFetch(`/api/admin/catalog/${id}`, { method: 'DELETE' });
       if (res && res.ok) loadCatalog();
     }
 
@@ -1268,78 +1073,7 @@
       }
     }
 
-    async function toggleUserStatus(id) {
-      const res = await apiFetch(`/ api / admin / users / ${ id }/toggle`, { method: 'POST' });
-      if (res && res.ok) loadUsers();
-    }
-
-    function renderUsers() {
-      const list = document.getElementById('usersList');
-      if (!list) return;
-      if (users.length === 0) {
-        list.innerHTML = '<div class="muted" style="font-size:12px;text-align:center">No users found</div>';
-        return;
-      }
-      list.innerHTML = users.map(u => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee">
-          <div>
-            <div style="font-weight:700; font-size:13px; color:var(--accent)">${u.name} <span class="muted" style="font-size:11px">(${u.role})</span></div>
-            <div style="font-size:11px; color:var(--text-light)">${u.email}</div>
-          </div>
-          <button class="btn btn-mini ${u.active ? 'btn-ghost' : ''}" style="${u.active ? 'color:var(--danger)' : 'background:var(--green);color:white'}" onclick="toggleUserStatus(${u.id})">
-            ${u.active ? 'Disable' : 'Enable'}
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function renderCatalog() {
-      const list = document.getElementById('catalogList');
-      if (catalogItems.length === 0) {
-        list.innerHTML = '<div class="muted" style="font-size:12px;text-align:center">No items in catalog</div>';
-        return;
-      }
-      list.innerHTML = catalogItems.map(item => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee">
-          <span style="font-size:13px; font-weight:600">${item.name} <span style="color:var(--green); margin-left:8px; font-weight:700">₹${item.price || 0}</span></span>
-          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="deleteCatalogItem(${item.id})">Delete</button>
-        </div>
-      `).join('');
-    }
-
-    async function cleanupLeads() {
-      if (!confirm('Kya aap waqai aaj se purani sabhi leads delete karna chahte hain? Ye action wapas nahi liya ja sakta.')) return;
-      const res = await apiFetch('/api/admin/cleanup-leads', { method: 'POST' });
-      if (res && res.ok) {
-        const data = await res.json();
-        showToast(`${data.count} purani leads delete kar di gayi hain`, 'success');
-      }
-    }
-
-    // --- MODALS ---
-    async function openAudit(customerId) {
-      const list = document.getElementById('auditList');
-      list.innerHTML = '<div class="muted">Loading history...</div>';
-      document.getElementById('auditOverlay').classList.add('show');
-      try {
-        const res = await apiFetch(`/api/admin/audit?customerId=${customerId}`);
-        const data = await res.json();
-        if (data.success) {
-          list.innerHTML = data.logs.map(log => `
-            <div class="audit-item" style="padding:10px; border-bottom:1px solid var(--border)">
-              <div style="font-weight:800;font-size:12px;color:var(--accent)">${log.action.toUpperCase()}</div>
-              <div class="muted" style="font-size:11px">${log.time}</div>
-              <div style="font-size:12px;margin-top:4px">${log.note || ''}</div>
-            </div>
-          `).join('');
-        } else {
-          list.innerHTML = '<div class="muted">No history found</div>';
-        }
-      } catch (e) { list.innerHTML = 'Error loading history'; }
-    }
-
-    function closeAudit() { document.getElementById('auditOverlay').classList.remove('show'); }
-
+    // --- WHATSAPP ---
     function updateWAStatus(ready) {
       waReady = ready;
       const btn = document.getElementById('waStatusBtn');
@@ -1352,45 +1086,22 @@
       if (res.ok) {
         const data = await res.json();
         updateWAStatus(!!data.ready);
-        if (data.qr && !waReady) showQRCode(data.qr);
       }
     }
 
     function toggleQR() {
       document.getElementById('qrOverlay').classList.add('show');
-      renderQRFromServer();
       if (wsConnected) ws.send(JSON.stringify({ type: 'get_qr' }));
     }
 
     function closeQR() { document.getElementById('qrOverlay').classList.remove('show'); }
 
-    async function showQRCode(qrString) {
-      document.getElementById('qrOverlay').classList.add('show');
+    function showQRCode(qrString) {
       const canvas = document.getElementById('qrCanvas');
-      if (window.QRCode) {
-        QRCode.toCanvas(canvas, qrString, { width: 220, margin: 2 });
-      }
+      QRCode.toCanvas(canvas, qrString, { width: 220, margin: 2 });
     }
 
-    async function renderQRFromServer() {
-      const res = await fetch('/api/whatsapp/qr-image');
-      const data = await res.json();
-      if (data && data.dataUrl) {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.getElementById('qrCanvas');
-          canvas.width = 220; canvas.height = 220;
-          canvas.getContext('2d').drawImage(img, 0, 0, 220, 220);
-        };
-        img.src = data.dataUrl;
-      }
-    }
-
-    // --- START ---
-    window.onload = () => {
-      initFilterDate();
-      checkAuth();
-    };
+    window.onload = checkAuth;
   </script>
 </body>
 

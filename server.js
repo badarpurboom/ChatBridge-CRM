@@ -1227,6 +1227,90 @@ app.get('/api/admin/lead-audit', requireAdmin, async (req, res) => {
   res.json(rows);
 });
 
+app.get('/api/admin/agent-order-stats', requireAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // Determine date bounds
+    const hasDateFilter = !!startDate || !!endDate;
+    let startMs = startDate ? new Date(startDate).getTime() : 0;
+    let endMs = endDate ? new Date(endDate).getTime() : Infinity;
+
+    // Extend end date to End of Day if no time is provided
+    if (endDate && !endDate.includes('T')) {
+      endMs += 24 * 60 * 60 * 1000 - 1;
+    }
+
+    // 1. Fetch all agents
+    const agents = await db.all("SELECT id, name, email, active FROM users WHERE role = 'agent'");
+    const statsMap = {};
+    for (const agent of agents) {
+      statsMap[agent.id] = {
+        ...agent,
+        assigned_count: 0,
+        mature_count: 0,
+        total_revenue: 0
+      };
+    }
+
+    // 2. Fetch all customers assigned to agents
+    const customers = await db.all("SELECT assigned_user_id, mature, mature_at, assigned_at, selected_items_json FROM customers WHERE assigned_user_id IS NOT NULL");
+
+    for (const c of customers) {
+      if (!statsMap[c.assigned_user_id]) continue;
+
+      const agentStats = statsMap[c.assigned_user_id];
+
+      // Calculate Assigned Count
+      if (hasDateFilter && c.assigned_at) {
+        const assignedMs = new Date(c.assigned_at).getTime();
+        if (assignedMs >= startMs && assignedMs <= endMs) {
+          agentStats.assigned_count++;
+        }
+      } else if (!hasDateFilter) {
+        agentStats.assigned_count++;
+      }
+
+      // Calculate Mature Count & Revenue
+      if (c.mature === 1) {
+        let isMatureInRange = false;
+        if (hasDateFilter && c.mature_at) {
+          const matureMs = new Date(c.mature_at).getTime();
+          if (matureMs >= startMs && matureMs <= endMs) {
+            isMatureInRange = true;
+          }
+        } else if (!hasDateFilter) {
+          isMatureInRange = true;
+        }
+
+        if (isMatureInRange) {
+          agentStats.mature_count++;
+
+          let revenue = 0;
+          try {
+            // Parse JSON directly and calculate totals
+            const items = JSON.parse(c.selected_items_json || '[]');
+            for (const item of items) {
+              const qty = parseInt(item.qty) || 1;
+              const price = parseFloat(item.price) || 0;
+              revenue += (price * qty);
+            }
+          } catch (e) { }
+
+          agentStats.total_revenue += revenue;
+        }
+      }
+    }
+
+    const result = Object.values(statsMap);
+    result.sort((a, b) => b.mature_count - a.mature_count || b.assigned_count - a.assigned_count || a.id - b.id);
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/admin/cleanup-leads', requireAdmin, async (req, res) => {
   try {
     const allLeads = await db.all('SELECT id, assigned_user_id, time, assigned_at FROM customers');
@@ -1587,6 +1671,11 @@ app.post('/api/customers/:id/mature', requireAuth, async (req, res) => {
   const items = getRowItems(existing);
   if (!items || items.length === 0) {
     return res.status(400).json({ error: 'At least one Product must be selected before marking as Order Done' });
+  }
+
+  // Keep the endpoint idempotent so repeated clicks/retries don't duplicate orders.
+  if (existing.mature) {
+    return res.json({ success: true, alreadyMature: true, customer: mapCustomer(existing) });
   }
 
   const now = new Date().toISOString();
