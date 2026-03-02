@@ -805,6 +805,8 @@ client.on('message', async (msg) => {
 
     const contact = await msg.getContact();
     const rawPhone = msg.from.replace('@c.us', '');
+    const actualNumber = contact.number || rawPhone; // Extract actual number if available
+
     const { phone, customer: existing } = await resolveCustomerByPhone(rawPhone);
     if (!phone) return;
 
@@ -818,6 +820,12 @@ client.on('message', async (msg) => {
       // Update existing customer name if it's still default
       if (existing.name === 'Unknown (WhatsApp)' && contact.pushname) {
         await db.run('UPDATE customers SET name = ? WHERE id = ?', [contact.pushname, existing.id]);
+      }
+
+      // If our stored phone is the long ID but we just got an actual number, update it
+      if (existing.phone !== actualNumber && actualNumber.length > 5 && actualNumber.length < 15) {
+        await db.run('UPDATE customers SET phone = ? WHERE id = ?', [actualNumber, existing.id]);
+        existing.phone = actualNumber;
       }
 
       let assignedId = existing.assigned_user_id;
@@ -854,7 +862,7 @@ client.on('message', async (msg) => {
           time, lastMessage, lastMessageTime, messageCount, isNew, contacted, source, assigned_user_id, assigned_at)
          VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          phone,
+          actualNumber,
           pushName,
           '',
           '',
