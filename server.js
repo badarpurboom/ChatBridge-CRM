@@ -803,15 +803,23 @@ client.on('message', async (msg) => {
     if (msg.from.includes('@g.us')) return;
     if (msg.type !== 'chat' && msg.type !== 'text') return;
 
+    const contact = await msg.getContact();
     const rawPhone = msg.from.replace('@c.us', '');
     const { phone, customer: existing } = await resolveCustomerByPhone(rawPhone);
     if (!phone) return;
+
+    const pushName = contact.pushname || 'Unknown (WhatsApp)';
     const messageText = msg.body;
     const time = new Date().toLocaleString('hi-IN');
     const rule = await getSetting('assignment_rule', 'manual');
     const companyFocus = await getCompanyFocus();
 
     if (existing) {
+      // Update existing customer name if it's still default
+      if (existing.name === 'Unknown (WhatsApp)' && contact.pushname) {
+        await db.run('UPDATE customers SET name = ? WHERE id = ?', [contact.pushname, existing.id]);
+      }
+
       let assignedId = existing.assigned_user_id;
       const prevAssignedId = existing.assigned_user_id;
       if (!assignedId) {
@@ -822,7 +830,7 @@ client.on('message', async (msg) => {
       await db.run(
         `UPDATE customers
          SET lastMessage = ?, lastMessageTime = ?, messageCount = ?, isNew = 1, assigned_user_id = ?
-    WHERE id = ? `,
+         WHERE id = ? `,
         [messageText, time, messageCount, assignedId, existing.id]
       );
       const updated = await db.get('SELECT * FROM customers WHERE id = ?', [existing.id]);
@@ -842,12 +850,12 @@ client.on('message', async (msg) => {
       const now = new Date().toISOString();
       const result = await db.run(
         `INSERT INTO customers
-    (phone, name, address, note, items_json, selected_items_json, selection_type,
-      time, lastMessage, lastMessageTime, messageCount, isNew, contacted, source, assigned_user_id, assigned_at)
-  VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (phone, name, address, note, items_json, selected_items_json, selection_type,
+          time, lastMessage, lastMessageTime, messageCount, isNew, contacted, source, assigned_user_id, assigned_at)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           phone,
-          'Unknown (WhatsApp)',
+          pushName,
           '',
           '',
           JSON.stringify([]),
