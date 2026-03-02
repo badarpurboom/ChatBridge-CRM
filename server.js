@@ -970,11 +970,19 @@ app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const existing = await db.get('SELECT * FROM users WHERE id = ?', [id]);
   if (!existing) return res.status(404).json({ error: 'User not found' });
+
+  // Prevent deleting the last active admin
   if (existing.role === 'admin') {
     const adminCount = await db.get("SELECT COUNT(*) AS cnt FROM users WHERE role = 'admin' AND active = 1");
-    if (adminCount.cnt <= 1) return res.status(400).json({ error: 'At least one admin required' });
+    if (adminCount.cnt <= 1) return res.status(400).json({ error: 'At least one active admin required' });
   }
-  await db.run('UPDATE users SET active = 0 WHERE id = ?', [id]);
+
+  // Unassign all leads assigned to this user before deleting
+  await db.run('UPDATE customers SET assigned_user_id = NULL WHERE assigned_user_id = ?', [id]);
+
+  // Permanently delete from database
+  await db.run('DELETE FROM users WHERE id = ?', [id]);
+
   res.json({ success: true });
 });
 

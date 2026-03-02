@@ -1006,7 +1006,10 @@
             <div style="font-weight:700; font-size:13px">${u.name} (${u.role})</div>
             <div class="muted">${u.email}</div>
           </div>
-          <button class="btn btn-mini ${u.active ? 'btn-ghost' : ''}" onclick="toggleUserStatus(${u.id})">${u.active ? 'Disable' : 'Enable'}</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-mini ${u.active ? 'btn-ghost' : ''}" onclick="toggleUserStatus(${u.id})">${u.active ? 'Disable' : 'Enable'}</button>
+            <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="deleteUser(${u.id})">Delete</button>
+          </div>
         </div>
       `).join('');
     }
@@ -1041,6 +1044,23 @@
       if (res && res.ok) {
         showToast('Lead deleted', 'success');
         fetchPaginatedLeads();
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Are you sure you want to PERMANENTLY delete this user? All leads assigned to them will be unassigned.')) return;
+      try {
+        const res = await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+        if (res && res.ok) {
+          showToast('User deleted permanently', 'success');
+          await fetchUsers();
+          fetchPaginatedLeads(); // Refresh leads in case assignments changed
+        } else if (res) {
+          const data = await res.json();
+          showToast(data.error || 'Delete failed', 'error');
+        }
+      } catch (e) {
+        showToast('Delete failed', 'error');
       }
     }
 
