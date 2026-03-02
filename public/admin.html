@@ -1089,9 +1089,28 @@
       }
     }
 
-    function toggleQR() {
+    async function toggleQR() {
       document.getElementById('qrOverlay').classList.add('show');
       if (wsConnected) ws.send(JSON.stringify({ type: 'get_qr' }));
+
+      // Fallback: Fetch via API if WebSocket is slow
+      try {
+        const res = await apiFetch('/api/whatsapp/qr-image');
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data.dataUrl) {
+            const canvas = document.getElementById('qrCanvas');
+            const img = new Image();
+            img.onload = () => {
+              const ctx = canvas.getContext('2d');
+              canvas.width = 220;
+              canvas.height = 220;
+              ctx.drawImage(img, 0, 0);
+            };
+            img.src = data.dataUrl;
+          }
+        }
+      } catch (e) { console.error('QR Fallback failed:', e); }
     }
 
     function closeQR() { document.getElementById('qrOverlay').classList.remove('show'); }
