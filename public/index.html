@@ -1200,7 +1200,7 @@
     // ========================================
     function connectWS() {
       try {
-        ws = new WebSocket('ws://localhost:3000');
+        ws = new WebSocket(`ws://${location.host}`);
 
         ws.onopen = () => {
           wsConnected = true;
@@ -1581,7 +1581,12 @@
         limit: paginationState.limit,
       });
       if (searchVal) q.append('search', searchVal);
-      if (currentFilter === 'new') q.append('status', 'unassigned');
+      if (currentFilter === 'new') {
+        // For agents, 'new' means assigned to them but not yet contacted/mature
+        // For admins, it might mean unassigned. 
+        // Let's refine this: if it's an agent, they want to see their assigned leads that are NEW.
+        q.append('status', 'assigned');
+      }
       if (currentFilter === 'contacted') q.append('status', 'mature');
 
       try {
