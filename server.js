@@ -766,7 +766,10 @@ let isReady = false;
 
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './whatsapp-session' }),
-  puppeteer: { headless: true }
+  puppeteer: {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  }
 });
 
 client.on('qr', (qr) => {
