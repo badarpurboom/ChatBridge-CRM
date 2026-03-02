@@ -251,6 +251,28 @@
       color: var(--text-light);
       margin-top: 4px;
       line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .item-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f0fff4;
+      border: 1px solid #86efac;
+      color: var(--accent);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin: 2px;
+    }
+
+    .card-total {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--green-dark);
+      margin-top: 6px;
+      padding-top: 4px;
+      border-top: 1px dashed var(--border);
     }
 
     .card-actions {
@@ -928,6 +950,14 @@
       return u ? u.name : 'Unknown';
     }
 
+    function formatItemLabel(item) {
+      if (typeof item === 'string') return item;
+      if (!item) return '';
+      const qty = item.qty && item.qty > 1 ? ` x${item.qty}` : '';
+      const price = item.price !== undefined ? ` (₹${item.price})` : '';
+      return `${item.name || ''}${qty}${price}`.trim();
+    }
+
     function renderColumn(id, leads, isUnassigned = false) {
       const container = document.getElementById(id);
       if (leads.length === 0) {
@@ -935,10 +965,23 @@
         return;
       }
 
-      container.innerHTML = leads.map(c => `
+      container.innerHTML = leads.map(c => {
+        let total = 0;
+        if (Array.isArray(c.items)) {
+          c.items.forEach(it => { if (it && it.price) total += (parseFloat(it.price) * (it.qty || 1)); });
+        }
+
+        return `
         <div class="lead-card ${c.mature ? 'mature-card' : ''}">
           <div class="card-name">${c.name}</div>
           <div class="card-phone">📱 ${c.phone}</div>
+          ${c.address ? `<div class="card-details">📍 ${c.address}</div>` : ''}
+          ${c.items && c.items.length > 0 ? `
+            <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px;">
+              ${c.items.map(i => `<span class="item-tag">${formatItemLabel(i)}</span>`).join('')}
+            </div>
+            <div class="card-total">Total: ₹${total}</div>
+          ` : ''}
           <div class="card-details">${c.assigned_user_id ? 'Agent: ' + getAgentName(c.assigned_user_id) : 'Unassigned'}</div>
           ${isUnassigned ? `
             <div class="card-actions">
@@ -952,7 +995,7 @@
             <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">Delete</button>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     function renderUsers() {
