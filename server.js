@@ -20,6 +20,12 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const qrcodeLib = require('qrcode');
 
+// OpenAI SDK
+const { OpenAI } = require('openai');
+
+// Custom Modules
+const aiModule = require('./modules/ai_module');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -118,6 +124,15 @@ async function initDb() {
       FOREIGN KEY(customer_id) REFERENCES customers(id)
     );
 
+    CREATE TABLE IF NOT EXISTS chat_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(customer_id) REFERENCES customers(id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
     CREATE INDEX IF NOT EXISTS idx_catalog_type ON catalog_items(type);
     CREATE INDEX IF NOT EXISTS idx_lead_audit_customer_id ON lead_audit(customer_id);
@@ -165,6 +180,7 @@ async function ensureCustomerColumns() {
   await ensureColumn('customers', 'mature', 'INTEGER DEFAULT 0');
   await ensureColumn('customers', 'mature_at', 'TEXT');
   await ensureColumn('customers', 'assigned_at', 'TEXT');
+  await ensureColumn('customers', 'lead_tag', 'TEXT DEFAULT NULL');
 }
 
 async function migrateCustomerSelections() {
@@ -526,7 +542,8 @@ function mapCustomer(row) {
     assigned_user_id: row.assigned_user_id,
     assigned_at: row.assigned_at ? new Date(row.assigned_at).toLocaleString('hi-IN') : '',
     mature: !!row.mature,
-    mature_at: row.mature_at || ''
+    mature_at: row.mature_at || '',
+    lead_tag: row.lead_tag || null
   };
 }
 
@@ -577,13 +594,45 @@ async function getPaginatedCustomers(user, options = {}) {
     params.push(searchStr, searchStr);
   }
 
-  // Date filtering
-  if (options.date) {
-    // Exact match for the ISO date string format (YYYY-MM-DD or DD/MM/YYYY variation depending on locale usage)
-    const dateStr = '%' + String(options.date).trim() + '%';
-    whereClauses.push('(assigned_at LIKE ? OR time LIKE ?)');
-    params.push(dateStr, dateStr);
+  // Lead Tag filtering
+  if (options.tag && options.tag !== 'all') {
+    if (options.tag === 'none') {
+      whereClauses.push('(lead_tag IS NULL OR lead_tag = "")');
+    } else {
+      whereClauses.push('lead_tag = ?');
+      params.push(options.tag);
+    }
   }
+
+  // Date range filtering (startDate and endDate take priority)
+  if (options.startDate || options.endDate) {
+    const startIso = options.startDate ? `${String(options.startDate).trim()}T00:00:00.000Z` : null;
+    const endIso = options.endDate ? `${String(options.endDate).trim()}T23:59:59.999Z` : null;
+    // For assigned_at (ISO format) and time (localeString) we use assigned_at where available.
+    // Rows with no assigned_at are included based on id insertion order (newest = today).
+    if (startIso && endIso) {
+      whereClauses.push('((assigned_at IS NOT NULL AND assigned_at >= ? AND assigned_at <= ?) OR (assigned_at IS NULL AND time LIKE ?))');
+      params.push(startIso, endIso, `%${String(options.startDate).trim()}%`);
+    } else if (startIso) {
+      whereClauses.push('(assigned_at IS NULL OR assigned_at >= ?)');
+      params.push(startIso);
+    } else if (endIso) {
+      whereClauses.push('(assigned_at IS NULL OR assigned_at <= ?)');
+      params.push(endIso);
+    }
+  } else if (options.date) {
+    // Legacy single-date filter (kept for backward compat)
+    const d = new Date(options.date);
+    const day = d.getDate();
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+    const isoDate = String(options.date).trim();
+    const dmY = `${day}/${month}/${year}`;
+    const ddmY = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    whereClauses.push('(assigned_at LIKE ? OR time LIKE ? OR time LIKE ? OR time LIKE ?)');
+    params.push(`%${isoDate}%`, `%${isoDate}%`, `%${dmY}%`, `%${ddmY}%`);
+  }
+
 
   const whereSql = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
@@ -835,12 +884,18 @@ client.on('message', async (msg) => {
       }
       const assignedChanged = assignedId && assignedId !== prevAssignedId;
       const messageCount = (existing.messageCount || 0) + 1;
+      const assignedAt = (assignedId && !existing.assigned_user_id) ? new Date().toISOString() : existing.assigned_at;
+
       await db.run(
         `UPDATE customers
-         SET lastMessage = ?, lastMessageTime = ?, messageCount = ?, isNew = 1, assigned_user_id = ?
+         SET lastMessage = ?, lastMessageTime = ?, messageCount = ?, isNew = 1, assigned_user_id = ?, assigned_at = ?
          WHERE id = ? `,
-        [messageText, time, messageCount, assignedId, existing.id]
+        [messageText, time, messageCount, assignedId, assignedAt, existing.id]
       );
+
+      // Save to chat history
+      await aiModule.saveChatHistory(existing.id, 'user', messageText);
+
       const updated = await db.get('SELECT * FROM customers WHERE id = ?', [existing.id]);
       if (assignedChanged) {
         await logLeadAssignment({
@@ -853,6 +908,17 @@ client.on('message', async (msg) => {
         });
       }
       broadcastCustomerUpdate(mapCustomer(updated), prevAssignedId);
+
+      // Trigger AI Response
+      const aiResponse = await aiModule.getAIResponse(existing.id, messageText);
+      if (aiResponse) {
+        await client.sendMessage(msg.from, aiResponse);
+        await aiModule.saveChatHistory(existing.id, 'assistant', aiResponse);
+        // Update last message to AI response
+        await db.run('UPDATE customers SET lastMessage = ?, lastMessageTime = ? WHERE id = ?', [aiResponse, new Date().toLocaleString('hi-IN'), existing.id]);
+        const finalUpdate = await db.get('SELECT * FROM customers WHERE id = ?', [existing.id]);
+        broadcastCustomerUpdate(mapCustomer(finalUpdate), assignedId);
+      }
     } else {
       const assignedId = await pickAssignee(rule);
       const now = new Date().toISOString();
@@ -880,7 +946,12 @@ client.on('message', async (msg) => {
           assignedId ? now : null
         ]
       );
-      const created = await db.get('SELECT * FROM customers WHERE id = ?', [result.lastID]);
+      const createdId = result.lastID;
+
+      // Save to chat history
+      await aiModule.saveChatHistory(createdId, 'user', messageText);
+
+      const created = await db.get('SELECT * FROM customers WHERE id = ?', [createdId]);
       if (assignedId) {
         await logLeadAssignment({
           customerId: created.id,
@@ -892,6 +963,17 @@ client.on('message', async (msg) => {
         });
       }
       broadcastCustomerNew(mapCustomer(created));
+
+      // Trigger AI Response
+      const aiResponse = await aiModule.getAIResponse(createdId, messageText);
+      if (aiResponse) {
+        await client.sendMessage(msg.from, aiResponse);
+        await aiModule.saveChatHistory(createdId, 'assistant', aiResponse);
+        // Update last message to AI response
+        await db.run('UPDATE customers SET lastMessage = ?, lastMessageTime = ? WHERE id = ?', [aiResponse, new Date().toLocaleString('hi-IN'), createdId]);
+        const finalUpdate = await db.get('SELECT * FROM customers WHERE id = ?', [createdId]);
+        broadcastCustomerUpdate(mapCustomer(finalUpdate), assignedId);
+      }
     }
   } catch (err) {
     console.error('[WA] Message error:', err.message);
@@ -1020,30 +1102,35 @@ app.post('/api/admin/users/:id/toggle', requireAdmin, async (req, res) => {
 app.get('/api/admin/settings', requireAdmin, async (req, res) => {
   const assignment_rule = await getSetting('assignment_rule', 'manual');
   const company_focus = await getCompanyFocus();
-  res.json({ assignment_rule, company_focus });
+  const openai_api_key = await getSetting('openai_api_key', '');
+  const ai_enabled = (await getSetting('ai_enabled', 'false')) === 'true';
+  const business_profile = await getSetting('business_profile', '');
+  res.json({ assignment_rule, company_focus, openai_api_key, ai_enabled, business_profile });
 });
 
 app.put('/api/admin/settings', requireAdmin, async (req, res) => {
-  const rule = req.body.assignment_rule;
-  const focus = req.body.company_focus;
-  if (rule !== undefined && !['manual', 'auto', 'random'].includes(rule)) {
+  const { assignment_rule, company_focus, openai_api_key, ai_enabled, business_profile } = req.body;
+  if (assignment_rule !== undefined && !['manual', 'auto', 'random'].includes(assignment_rule)) {
     return res.status(400).json({ error: 'Invalid rule' });
   }
-  if (focus !== undefined && !['product', 'service'].includes(focus)) {
+  if (company_focus !== undefined && !['product', 'service'].includes(company_focus)) {
     return res.status(400).json({ error: 'Invalid company focus' });
   }
-  if (rule !== undefined) {
-    await setSetting('assignment_rule', rule);
-  }
+
+  if (assignment_rule !== undefined) await setSetting('assignment_rule', assignment_rule);
+
   let focusChanged = false;
-  if (focus !== undefined) {
+  if (company_focus !== undefined) {
     const prev = await getCompanyFocus();
-    await setSetting('company_focus', focus);
-    focusChanged = prev !== focus;
+    await setSetting('company_focus', company_focus);
+    focusChanged = prev !== company_focus;
   }
-  if (focusChanged) {
-    await broadcastCatalogUpdate();
-  }
+  if (focusChanged) await broadcastCatalogUpdate();
+
+  if (openai_api_key !== undefined) await setSetting('openai_api_key', openai_api_key);
+  if (ai_enabled !== undefined) await setSetting('ai_enabled', String(ai_enabled));
+  if (business_profile !== undefined) await setSetting('business_profile', business_profile);
+
   res.json({ success: true });
 });
 
@@ -1236,6 +1323,44 @@ app.post('/api/admin/unassign', requireAdmin, async (req, res) => {
   broadcastCustomerUpdate(mapCustomer(updated), prevAssignedId);
   res.json({ success: true });
 });
+
+// ==========================================
+// LEAD TAG ROUTE (Agent + Admin)
+// ==========================================
+const VALID_TAGS = ['Interested', 'Not Interested', 'Ringing', 'Switch Off'];
+
+app.post('/api/customers/:id/tag', requireAuth, async (req, res) => {
+  const customerId = parseInt(req.params.id, 10);
+  const { tag } = req.body; // null to clear
+
+  if (tag !== null && tag !== undefined && !VALID_TAGS.includes(tag)) {
+    return res.status(400).json({ error: 'Invalid tag value' });
+  }
+
+  const customer = await db.get('SELECT * FROM customers WHERE id = ?', [customerId]);
+  if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+  // Agents can only tag their own assigned customers
+  if (req.session.user.role !== 'admin' && customer.assigned_user_id !== req.session.user.id) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const newTag = tag || null;
+  if (req.session.user.role === 'agent') {
+    // Agent tagging counts as lead action, same visual state as chat action.
+    await db.run(
+      'UPDATE customers SET lead_tag = ?, isNew = 0, contacted = 1 WHERE id = ?',
+      [newTag, customerId]
+    );
+  } else {
+    await db.run('UPDATE customers SET lead_tag = ? WHERE id = ?', [newTag, customerId]);
+  }
+  const updated = await db.get('SELECT * FROM customers WHERE id = ?', [customerId]);
+  broadcastCustomerUpdate(mapCustomer(updated), customer.assigned_user_id);
+  res.json({ success: true, lead_tag: newTag });
+});
+
+
 
 app.get('/api/admin/lead-audit', requireAdmin, async (req, res) => {
   const customerId = parseInt(req.query.customerId, 10);
@@ -1436,9 +1561,12 @@ app.post('/api/customers', requireAuth, async (req, res) => {
         return res.status(403).json({ error: 'Lead already assigned to another agent' });
       }
       const assignedUserId = existing.assigned_user_id || req.session.user.id;
+      const now = new Date().toISOString();
+      const assignedAt = (assignedUserId && !existing.assigned_user_id) ? now : existing.assigned_at;
+
       await db.run(
         `UPDATE customers
-         SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, assigned_user_id = ?
+         SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, assigned_user_id = ?, assigned_at = ?
     WHERE id = ? `,
         [
           body.name ?? existing.name,
@@ -1448,6 +1576,7 @@ app.post('/api/customers', requireAuth, async (req, res) => {
           selectedItemsJson || existing.selected_items_json,
           selectionType,
           assignedUserId,
+          assignedAt,
           existing.id
         ]
       );
@@ -1477,9 +1606,12 @@ app.post('/api/customers', requireAuth, async (req, res) => {
       assignedUserId = agent.id;
     }
 
+    const now = new Date().toISOString();
+    const assignedAt = (assignedUserId && !existing.assigned_user_id) ? now : existing.assigned_at;
+
     await db.run(
       `UPDATE customers
-       SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, assigned_user_id = ?
+       SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, assigned_user_id = ?, assigned_at = ?
     WHERE id = ? `,
       [
         body.name ?? existing.name,
@@ -1489,6 +1621,7 @@ app.post('/api/customers', requireAuth, async (req, res) => {
         selectedItemsJson || existing.selected_items_json,
         selectionType,
         assignedUserId,
+        assignedAt,
         existing.id
       ]
     );
@@ -1608,6 +1741,7 @@ app.put('/api/customers/:id', requireAuth, async (req, res) => {
     selection_type: nextSelectionType,
     isNew: body.isNew !== undefined ? (body.isNew ? 1 : 0) : existing.isNew,
     contacted: body.contacted !== undefined ? (body.contacted ? 1 : 0) : existing.contacted,
+    lead_tag: body.lead_tag !== undefined ? body.lead_tag : existing.lead_tag,
     lastMessage: body.lastMessage ?? existing.lastMessage,
     lastMessageTime: body.lastMessageTime ?? existing.lastMessageTime,
     messageCount: body.messageCount ?? existing.messageCount,
@@ -1621,9 +1755,9 @@ app.put('/api/customers/:id', requireAuth, async (req, res) => {
   const now = new Date().toISOString();
   await db.run(
     `UPDATE customers
-     SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, isNew = ?, contacted = ?,
+     SET name = ?, address = ?, note = ?, items_json = ?, selected_items_json = ?, selection_type = ?, isNew = ?, contacted = ?, lead_tag = ?,
     lastMessage = ?, lastMessageTime = ?, messageCount = ?, assigned_user_id = ?,
-    assigned_at = CASE WHEN assigned_user_id != ? THEN ? ELSE assigned_at END
+    assigned_at = CASE WHEN IFNULL(assigned_user_id, 0) != IFNULL(?, 0) THEN ? ELSE assigned_at END
      WHERE id = ? `,
     [
       updated.name,
@@ -1634,6 +1768,7 @@ app.put('/api/customers/:id', requireAuth, async (req, res) => {
       updated.selection_type,
       updated.isNew,
       updated.contacted,
+      updated.lead_tag,
       updated.lastMessage,
       updated.lastMessageTime,
       updated.messageCount,
@@ -1798,10 +1933,18 @@ app.post('/api/whatsapp/send', requireAuth, async (req, res) => {
 });
 
 // ==========================================
+// MISC ROUTES
+// ==========================================
+app.get('/api/ai', (req, res) => {
+  res.json({ message: "AI Module Active (Modular)" });
+});
+
+// ==========================================
 // SERVER START
 // ==========================================
 async function start() {
   await initDb();
+  aiModule.init(db);
   server.listen(PORT, () => {
     console.log('========================================');
     console.log('CRM Server running at http://localhost:' + PORT);

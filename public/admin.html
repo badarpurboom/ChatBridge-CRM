@@ -266,6 +266,41 @@
       margin: 2px;
     }
 
+    .lead-tag-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 4px;
+    }
+
+    .lead-tag-badge.Interested {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .lead-tag-badge.Not-Interested {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    .lead-tag-badge.Ringing {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border: 1px solid #93c5fd;
+    }
+
+    .lead-tag-badge.Switch-Off {
+      background: #f3f4f6;
+      color: #6b7280;
+      border: 1px solid #d1d5db;
+    }
+
+
+
     .card-total {
       font-size: 13px;
       font-weight: 800;
@@ -535,28 +570,100 @@
       color: var(--text-light);
       font-size: 12px;
     }
+
+    /* BULK SELECT */
+    .lead-checkbox {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--green-dark);
+      flex-shrink: 0;
+    }
+
+    .lead-card.selected-card {
+      border: 2px solid var(--green-dark);
+      background: #f0fff4;
+    }
+
+    .selection-bar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(135deg, var(--accent), var(--green-dark));
+      color: white;
+      padding: 10px 20px;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .selection-bar.active {
+      display: flex;
+    }
+
+    .sel-count {
+      flex: 1;
+    }
+
+    .btn-download {
+      padding: 6px 14px;
+      background: white;
+      color: var(--accent);
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-download:hover {
+      background: #f0fff4;
+    }
+
+    .btn-clear-sel {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-clear-sel:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .col-select-bar {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
   </style>
+
 </head>
 
 <body>
-
   <!-- LOGIN -->
   <div class="login-overlay" id="loginOverlay">
     <div class="login-box">
       <h2>Admin Login</h2>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@example.com" class="header-input">
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" class="header-input">
-      </div>
-      <button class="btn" onclick="login()" style="width:100%; justify-content:center">Login</button>
+      <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="admin@example.com"
+          class="header-input"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"
+          class="header-input"></div><button class="btn" onclick="login()"
+        style="width:100%; justify-content:center">Login</button>
       <div class="login-error" id="loginError"></div>
     </div>
   </div>
-
   <!-- HEADER -->
   <div class="header">
     <div class="header-left">
@@ -566,108 +673,106 @@
     <div class="header-actions">
       <div class="stat-pill" id="userPill" style="display:none; color:white; font-size:12px; font-weight:700">User:
         <span id="userName">-</span>
-      </div>
-      <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
+      </div><button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none">Logout</button>
       <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
-        <div class="status-dot"></div>
-        <span id="waStatusText">WhatsApp Connect</span>
+        <div class="status-dot"></div><span id="waStatusText">WhatsApp Connect</span>
       </div>
     </div>
   </div>
-
   <!-- QR MODAL -->
   <div class="qr-overlay" id="qrOverlay">
     <div class="qr-box" id="qrBox">
       <h2>WhatsApp Connect</h2>
-      <p class="muted">QR scan karke WhatsApp connect karo</p>
-      <canvas id="qrCanvas"></canvas>
-      <div style="margin-top:12px; text-align:center">
-        <button class="btn btn-ghost" onclick="closeQR()">Close</button>
+      <p class="muted">QR scan karke WhatsApp connect karo</p><canvas id="qrCanvas"></canvas>
+      <div style="margin-top:12px; text-align:center"><button class="btn btn-ghost" onclick="closeQR()">Close</button>
       </div>
     </div>
   </div>
-
   <div class="dashboard-bar">
     <div class="stats-container">
-      <div class="stat-card">
-        <span class="stat-label">Total Mature</span>
-        <span class="stat-value mature" id="statMature">0</span>
+      <div class="stat-card"><span class="stat-label">Total Mature</span><span class="stat-value mature"
+          id="statMature">0</span></div>
+      <div class="stat-card"><span class="stat-label">Assigned</span><span class="stat-value" id="statAssigned">0</span>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Assigned</span>
-        <span class="stat-value" id="statAssigned">0</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Unassigned</span>
-        <span class="stat-value new" id="statUnassigned">0</span>
-      </div>
+      <div class="stat-card"><span class="stat-label">Unassigned</span><span class="stat-value new"
+          id="statUnassigned">0</span></div>
     </div>
-
     <div class="filter-bar">
-      <div class="filter-group">
-        <label>Date:</label>
-        <input type="date" id="filterDate" class="header-input" onchange="fetchPaginatedLeads()">
-      </div>
-      <div class="filter-group">
-        <label>Agent:</label>
-        <select id="filterAgent" class="header-input" onchange="fetchPaginatedLeads()">
+      <div class="filter-group"><label>From:</label><input type="date" id="filterStartDate" class="header-input"
+          onchange="fetchPaginatedLeads()"></div>
+      <div class="filter-group"><label>To:</label><input type="date" id="filterEndDate" class="header-input"
+          onchange="fetchPaginatedLeads()"></div>
+      <div class="filter-group"><label>Agent:</label><select id="filterAgent" class="header-input"
+          onchange="fetchPaginatedLeads()">
           <option value="all">All Agents</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <input type="text" id="filterSearch" class="header-input" placeholder="Search Name/Phone..."
-          oninput="fetchPaginatedLeads()">
-      </div>
-      <button class="btn btn-ghost" onclick="toggleSettingsModal()">⚙️ Settings</button>
+        </select></div>
+      <div class="filter-group"><input type="text" id="filterSearch" class="header-input"
+          placeholder="Search Name/Phone..." oninput="fetchPaginatedLeads()"></div>
+      <div class="filter-group"><label>Tag:</label><select id="filterTag" class="header-input"
+          onchange="fetchPaginatedLeads()">
+          <option value="all">All Tags</option>
+          <option value="Interested">✅ Interested</option>
+          <option value="Not Interested">❌ Not Interested</option>
+          <option value="Ringing">📞 Ringing</option>
+          <option value="Switch Off">📵 Switch Off</option>
+          <option value="none">⬜ No Tag</option>
+        </select></div><button class="btn btn-ghost btn-mini" onclick="clearDateFilter()" style="font-size:11px;">Clear
+        Dates</button><button class="btn btn-ghost" onclick="toggleSettingsModal()">⚙️ Settings</button>
     </div>
   </div>
-
   <div class="admin-main">
     <!-- LEFT COLUMN: NEW / UNASSIGNED -->
     <div class="admin-column">
       <div class="column-header">
         <h2>🟡 New Leads (Unassigned)</h2>
-        <div class="row" id="bulkActions" style="display:none; gap:10px; align-items:center">
-          <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="bulkDelete()">Delete</button>
-          <select id="bulkAssignSelect" class="form-select"></select>
-          <button class="btn btn-mini" onclick="bulkAssign()">Assign</button>
+        <div class="col-select-bar"><button class="btn btn-mini btn-ghost"
+            onclick="selectAllInColumn('unassignedColumn')">✔
+            All</button><button class="btn btn-mini btn-ghost" onclick="deselectAllInColumn('unassignedColumn')">✕
+            None</button>
+          <div class="row" id="bulkActions" style="display:flex; gap:8px; align-items:center"><select
+              id="bulkAssignSelect" class="form-select"></select><button class="btn btn-mini"
+              onclick="bulkAssign()">Assign</button><button class="btn btn-mini btn-ghost" style="color:var(--danger)"
+              onclick="bulkDelete()">Delete</button></div>
         </div>
       </div>
       <div class="column-scroll" id="unassignedColumn"></div>
     </div>
-
     <!-- MIDDLE COLUMN: ASSIGNED -->
     <div class="admin-column">
       <div class="column-header">
         <h2>✅ Assigned Leads</h2>
-        <span class="muted" id="assignedCount">0 leads</span>
+        <div class="col-select-bar"><button class="btn btn-mini btn-ghost"
+            onclick="selectAllInColumn('assignedColumn')">✔
+            All</button><button class="btn btn-mini btn-ghost" onclick="deselectAllInColumn('assignedColumn')">✕
+            None</button><span class="muted" id="assignedCount">0
+            leads</span></div>
       </div>
       <div class="column-scroll" id="assignedColumn"></div>
     </div>
-
     <!-- RIGHT COLUMN: MATURE -->
     <div class="admin-column">
       <div class="column-header">
         <h2>🟢 Mature (Ordered)</h2>
-        <span class="muted" id="matureCount">0 leads</span>
+        <div class="col-select-bar"><button class="btn btn-mini btn-ghost" onclick="selectAllInColumn('matureColumn')">✔
+            All</button><button class="btn btn-mini btn-ghost" onclick="deselectAllInColumn('matureColumn')">✕
+            None</button><span class="muted" id="matureCount">0
+            leads</span></div>
       </div>
       <div class="column-scroll" id="matureColumn"></div>
     </div>
   </div>
-
   <!-- PAGINATION -->
   <div
     style="display: flex; justify-content: center; gap: 15px; padding: 12px; background: white; border-top: 1px solid var(--border);">
-    <button class="btn btn-ghost" id="btnPrevPage" onclick="changePage(-1)">◀ Previous</button>
-    <span style="font-size: 14px; font-weight: 700; color: var(--text); padding: 8px 0" id="pageIndicator">Page 1</span>
-    <button class="btn btn-ghost" id="btnNextPage" onclick="changePage(1)">Next ▶</button>
-    <select id="limitSelect" class="form-select" onchange="changeLimit(this.value)">
+    <button class="btn btn-ghost" id="btnPrevPage" onclick="changePage(-1)">◀ Previous</button><span
+      style="font-size: 14px; font-weight: 700; color: var(--text); padding: 8px 0" id="pageIndicator">Page
+      1</span><button class="btn btn-ghost" id="btnNextPage" onclick="changePage(1)">Next ▶</button><select
+      id="limitSelect" class="form-select" onchange="changeLimit(this.value)">
       <option value="50">50 / page</option>
       <option value="100">100 / page</option>
       <option value="500">500 / page</option>
     </select>
   </div>
-
   <!-- SETTINGS MODAL -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-box" style="width: 500px; max-height: 85vh; overflow-y: auto;">
@@ -676,61 +781,67 @@
         <section>
           <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
             Assignment Rule</h3>
-          <div style="display:flex; gap:10px">
-            <select id="assignmentRule" class="form-select" style="flex:1">
+          <div style="display:flex; gap:10px"><select id="assignmentRule" class="form-select" style="flex:1">
               <option value="manual">Manual</option>
               <option value="auto">Auto (Round Robin)</option>
               <option value="random">Random</option>
-            </select>
-            <button class="btn" onclick="saveRule()">Save</button>
-          </div>
+            </select><button class="btn" onclick="saveRule()">Save</button></div>
         </section>
-
         <section>
           <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
             Business Focus</h3>
-          <div style="display:flex; gap:10px">
-            <select id="companyFocus" class="form-select" style="flex:1">
+          <div style="display:flex; gap:10px"><select id="companyFocus" class="form-select" style="flex:1">
               <option value="product">Product Focus</option>
               <option value="service">Service Focus</option>
-            </select>
-            <button class="btn" onclick="saveFocus()">Save</button>
-          </div>
+            </select><button class="btn" onclick="saveFocus()">Save</button></div>
         </section>
-
         <section>
           <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
             Catalog</h3>
-          <div style="display:flex; gap:10px; margin-bottom:12px">
-            <input type="text" id="newCatalogName" class="header-input" style="flex:1" placeholder="Item Name">
-            <input type="number" id="newCatalogPrice" class="header-input" style="width:80px" placeholder="Price">
-            <button class="btn" onclick="addCatalogItem()">Add</button>
-          </div>
+          <div style="display:flex; gap:10px; margin-bottom:12px"><input type="text" id="newCatalogName"
+              class="header-input" style="flex:1" placeholder="Item Name"><input type="number" id="newCatalogPrice"
+              class="header-input" style="width:80px" placeholder="Price"><button class="btn"
+              onclick="addCatalogItem()">Add</button></div>
           <div id="catalogList" class="grid"
-            style="max-height:150px; overflow-y:auto; background:var(--bg); padding:8px; border-radius:8px"></div>
+            style="max-height:150px; overflow-y:auto; background:var(--bg); padding:8px; border-radius:8px">
+          </div>
         </section>
-
         <section>
           <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
             Create New User</h3>
-          <div class="grid" style="gap:10px">
-            <input type="text" id="newUserName" class="header-input" placeholder="Full Name">
-            <input type="email" id="newUserEmail" class="header-input" placeholder="Email Address">
-            <div style="display:flex; gap:10px">
-              <input type="password" id="newUserPassword" class="header-input" style="flex:1" placeholder="Password">
-              <select id="newUserRole" class="form-select">
+          <div class="grid" style="gap:10px"><input type="text" id="newUserName" class="header-input"
+              placeholder="Full Name"><input type="email" id="newUserEmail" class="header-input"
+              placeholder="Email Address">
+            <div style="display:flex; gap:10px"><input type="password" id="newUserPassword" class="header-input"
+                style="flex:1" placeholder="Password"><select id="newUserRole" class="form-select">
                 <option value="agent">Agent</option>
                 <option value="admin">Admin</option>
-              </select>
-            </div>
-            <button class="btn" onclick="createUser()" style="justify-content:center">Create User</button>
+              </select></div><button class="btn" onclick="createUser()" style="justify-content:center">Create
+              User</button>
           </div>
         </section>
-
         <section>
           <h3 style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:4px">
             Users</h3>
           <div id="usersList" class="grid" style="max-height:200px; overflow-y:auto"></div>
+        </section>
+        <section style="background: var(--bg); padding: 16px; border-radius: 12px; border: 1px solid var(--green);">
+          <h3
+            style="font-size:14px; margin-bottom:12px; border-bottom:1px solid var(--green); padding-bottom:4px; color: var(--green-dark)">
+            🤖 AI Chat Settings</h3>
+          <div class="grid" style="gap:12px">
+            <div class="form-group"><label>OpenAI API Key</label><input type="password" id="openaiApiKey"
+                class="header-input" placeholder="sk-..."></div>
+            <div class="form-group"><label>AI Status</label><select id="aiEnabled" class="form-select">
+                <option value="false">Disabled</option>
+                <option value="true">Enabled (Auto-Reply)</option>
+              </select></div>
+            <div class="form-group"><label>Business Profile (AI Context)</label><textarea id="businessProfile"
+                class="header-input" style="height:100px; resize:vertical"
+                placeholder="Describe your business and services..."></textarea></div><button class="btn"
+              onclick="saveAISettings()" style="justify-content:center; background:var(--green-dark)">Save AI
+              Settings</button>
+          </div>
         </section>
       </div>
       <div style="margin-top:24px; text-align:center; border-top:1px solid var(--border); padding-top:16px">
@@ -738,17 +849,21 @@
       </div>
     </div>
   </div>
-
   <!-- TOAST -->
   <div id="toast" class="toast"></div>
-
-  <script>
-    let customers = [];
+  <script>let customers = [];
     let users = [];
     let catalogItems = [];
     let companyFocus = 'product';
-    let paginationState = { page: 1, limit: 50, total: 0, totalPages: 1 };
+
+    let paginationState = {
+      page: 1, limit: 50, total: 0, totalPages: 1
+    }
+
+      ;
     let selectedUnassigned = new Set();
+    let selectedIds = new Set(); // Global selection across all columns
+
     let ws = null;
     let wsConnected = false;
     let waReady = false;
@@ -764,15 +879,17 @@
 
     async function apiFetch(url, options = {}) {
       const res = await fetch(url, options);
+
       if (res.status === 401 || res.status === 403) {
         showLogin(true);
         return null;
       }
+
       return res;
     }
 
     function showLogin(show) {
-      document.getElementById('loginOverlay').classList.toggle('show', !!show);
+      document.getElementById('loginOverlay').classList.toggle('show', ! !show);
     }
 
     function toggleSettingsModal() {
@@ -783,51 +900,88 @@
     async function checkAuth() {
       try {
         const res = await fetch('/api/auth/me');
+
         if (res.ok) {
           const data = await res.json();
+
           if (data.user.role !== 'admin') {
             showToast('Admin access required', 'error');
             showLogin(true);
             return;
           }
+
           currentUser = data.user;
           document.getElementById('userPill').style.display = 'inline-flex';
           document.getElementById('userName').textContent = currentUser.name;
           document.getElementById('logoutBtn').style.display = 'inline-flex';
           showLogin(false);
           startApp();
-        } else {
+        }
+
+        else {
           showLogin(true);
         }
-      } catch (e) { showLogin(true); }
+      }
+
+      catch (e) {
+        showLogin(true);
+      }
     }
 
     async function login() {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const err = document.getElementById('loginError');
+
       try {
         const res = await fetch('/api/auth/login', {
+
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          headers: {
+            'Content-Type': 'application/json'
+          }
+
+          ,
+          body: JSON.stringify({
+            email, password
+          })
         });
         const data = await res.json();
+
         if (data.success && data.user.role === 'admin') {
           location.reload();
-        } else {
+        }
+
+        else {
           err.textContent = data.error || 'Login failed';
         }
-      } catch (e) { err.textContent = 'Server error'; }
+      }
+
+      catch (e) {
+        err.textContent = 'Server error';
+      }
     }
 
     async function logout() {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', {
+        method: 'POST'
+      });
       location.reload();
     }
 
     // --- DATA LOADING ---
     async function startApp() {
+
+      // Inject selection bar HTML dynamically
+      if (!document.getElementById('selectionBar')) {
+        const bar = document.createElement('div');
+        bar.id = 'selectionBar';
+        bar.className = 'selection-bar';
+        bar.innerHTML = ` <span class="sel-count" id="selCount">0 leads selected</span><button class="btn-download" onclick="downloadCSV()">📥 Download CSV</button><button class="btn-clear-sel" onclick="clearSelection()">✕ Clear Selection</button>`;
+        const adminMain = document.querySelector('.admin-main');
+        if (adminMain) adminMain.before(bar);
+      }
+
       connectWS();
       await loadUsers();
       await loadSettings();
@@ -835,14 +989,17 @@
       initFilterDate();
     }
 
+
     async function loadUsers() {
       const res = await apiFetch('/api/admin/users');
       if (!res) return;
       users = await res.json();
       const agents = users.filter(u => u.role === 'agent' && u.active);
       const filterAgent = document.getElementById('filterAgent');
-      filterAgent.innerHTML = '<option value="all">All Agents</option>' +
-        agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+      filterAgent.innerHTML = '<option value="all">All Agents</option>' + agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      const bulkSelect = document.getElementById('bulkAssignSelect');
+      if (bulkSelect) bulkSelect.innerHTML = '<option value="">Bulk Assign...</option>' + agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
       renderUsers();
       fetchPaginatedLeads();
     }
@@ -854,11 +1011,18 @@
       document.getElementById('assignmentRule').value = data.assignment_rule || 'manual';
       companyFocus = data.company_focus || 'product';
       document.getElementById('companyFocus').value = companyFocus;
+
+      // AI Settings
+      document.getElementById('openaiApiKey').value = data.openai_api_key || '';
+      document.getElementById('aiEnabled').value = String(data.ai_enabled || 'false');
+      document.getElementById('businessProfile').value = data.business_profile || '';
+
       loadCatalog();
     }
 
     async function loadCatalog() {
       const res = await apiFetch(`/api/admin/catalog?type=${companyFocus}`);
+
       if (res && res.ok) {
         catalogItems = await res.json();
         renderCatalog();
@@ -870,28 +1034,77 @@
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, '0');
       const d = String(now.getDate()).padStart(2, '0');
-      document.getElementById('filterDate').value = `${y}-${m}-${d}`;
+
+      const today = `${y}-${m}-${d}`;
+      document.getElementById('filterStartDate').value = today;
+      document.getElementById('filterEndDate').value = today;
     }
+
+    function clearDateFilter() {
+      document.getElementById('filterStartDate').value = '';
+      document.getElementById('filterEndDate').value = '';
+      paginationState.page = 1;
+      fetchPaginatedLeads();
+    }
+
 
     // --- WEBSOCKET ---
     function connectWS() {
       ws = new WebSocket(`ws://${location.host}`);
-      ws.onopen = () => { wsConnected = true; };
+
+      ws.onopen = () => {
+        wsConnected = true;
+      }
+
+        ;
+
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.type === 'qr') showQRCode(data.qr);
+
         else if (data.type === 'ready') {
           updateWAStatus(true);
           closeQR();
-        } else {
+        }
+
+        else if (data.type === 'update_customer') {
+          const idx = customers.findIndex(c => c.id === data.customer.id);
+          if (idx !== -1) {
+            customers[idx] = data.customer;
+            renderAll();
+          } else {
+            if (paginationState.page === 1) fetchPaginatedLeads();
+          }
+        }
+        else if (data.type === 'delete_customer') {
+          customers = customers.filter(c => c.id !== data.id);
+          renderAll();
+          if (customers.length === 0) fetchPaginatedLeads();
+        }
+        else if (data.type === 'new_customer') {
+          if (paginationState.page === 1) {
+            customers = customers.filter(c => c.id !== data.customer.id);
+            customers.unshift(data.customer);
+            renderAll();
+          }
+        }
+        else {
           fetchPaginatedLeads();
         }
-      };
-      ws.onclose = () => { wsConnected = false; setTimeout(connectWS, 3000); };
+      }
+
+        ;
+
+      ws.onclose = () => {
+        wsConnected = false; setTimeout(connectWS, 3000);
+      }
+
+        ;
     }
 
     async function fetchPaginatedLeads() {
-      const dateVal = document.getElementById('filterDate').value;
+      const startDateVal = document.getElementById('filterStartDate').value;
+      const endDateVal = document.getElementById('filterEndDate').value;
       const agentVal = document.getElementById('filterAgent').value;
       const searchVal = document.getElementById('filterSearch').value;
 
@@ -899,22 +1112,32 @@
         page: paginationState.page,
         limit: paginationState.limit,
       });
-      if (dateVal) q.append('date', dateVal);
+      if (startDateVal) q.append('startDate', startDateVal);
+      if (endDateVal) q.append('endDate', endDateVal);
       if (agentVal && agentVal !== 'all') q.append('agentId', agentVal);
       if (searchVal) q.append('search', searchVal);
+      const tagVal = document.getElementById('filterTag') ? document.getElementById('filterTag').value : 'all';
+      if (tagVal && tagVal !== 'all') q.append('tag', tagVal);
+
 
       try {
         const res = await apiFetch(`/api/customers/paginated?${q.toString()}`);
+
         if (res && res.ok) {
           const json = await res.json();
           customers = json.data || [];
           paginationState = json.pagination;
+
           document.getElementById('pageIndicator').textContent = `Page ${paginationState.page} of ${paginationState.totalPages || 1} (${paginationState.total} total)`;
           document.getElementById('btnPrevPage').disabled = paginationState.page <= 1;
           document.getElementById('btnNextPage').disabled = paginationState.page >= paginationState.totalPages;
           renderAll();
         }
-      } catch (e) { console.error(e) }
+      }
+
+      catch (e) {
+        console.error(e)
+      }
     }
 
     function changePage(delta) {
@@ -953,13 +1176,16 @@
     function formatItemLabel(item) {
       if (typeof item === 'string') return item;
       if (!item) return '';
+
       const qty = item.qty && item.qty > 1 ? ` x${item.qty}` : '';
       const price = item.price !== undefined ? ` (₹${item.price})` : '';
+
       return `${item.name || ''}${qty}${price}`.trim();
     }
 
     function renderColumn(id, leads, isUnassigned = false) {
       const container = document.getElementById(id);
+
       if (leads.length === 0) {
         container.innerHTML = '<div class="muted" style="text-align:center;padding:40px">No leads found</div>';
         return;
@@ -968,34 +1194,55 @@
       container.innerHTML = leads.map(c => {
         let total = 0;
         if (Array.isArray(c.items)) {
-          c.items.forEach(it => { if (it && it.price) total += (parseFloat(it.price) * (it.qty || 1)); });
+          c.items.forEach(it => {
+            if (it && it.price) total += (parseFloat(it.price) * (it.qty || 1));
+          });
         }
 
         return `
-        <div class="lead-card ${c.mature ? 'mature-card' : ''}">
-          <div class="card-name">${c.name}</div>
-          <div class="card-phone">📱 ${c.phone}</div>
-          ${c.address ? `<div class="card-details">📍 ${c.address}</div>` : ''}
-          ${c.items && c.items.length > 0 ? `
-            <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px;">
-              ${c.items.map(i => `<span class="item-tag">${formatItemLabel(i)}</span>`).join('')}
-            </div>
-            <div class="card-total">Total: ₹${total}</div>
-          ` : ''}
-          <div class="card-details">${c.assigned_user_id ? 'Agent: ' + getAgentName(c.assigned_user_id) : 'Unassigned'}</div>
-          ${isUnassigned ? `
-            <div class="card-actions">
-              <select class="form-select" onchange="assignLead(${c.id}, this.value)">
-                <option value="">Assign to...</option>
-                ${users.filter(u => u.role === 'agent' && u.active).map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
-              </select>
-            </div>
-          ` : ''}
-          <div class="card-actions">
-            <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">Delete</button>
-          </div>
-        </div>
-      `}).join('');
+                      <div class="lead-card ${c.mature ? 'mature-card' : ''} ${selectedIds.has(c.id) ? 'selected-card' : ''}" data-id="${c.id}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                          <div class="card-left">
+                            <div class="card-name">${c.name}</div>
+                            <div class="card-phone">${c.phone}</div>
+                          </div>
+                          <input type="checkbox" class="lead-checkbox" data-id="${c.id}" ${selectedIds.has(c.id) ? 'checked' : ''} onchange="toggleSelect(${c.id}, this.checked)">
+                        </div>
+                        
+                        ${c.address ? `<div class="card-details">📍 ${c.address}</div>` : ''}
+                        
+                        ${c.items && c.items.length > 0 ? `
+                          <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px;">
+                            ${c.items.map(i => `<span class="item-tag">${formatItemLabel(i)}</span>`).join('')}
+                          </div>
+                          <div class="card-total">Total: ₹${total}</div>
+                        ` : ''}
+                        
+                        <div class="card-details">
+                          ${c.assigned_user_id ? 'Agent: ' + getAgentName(c.assigned_user_id) : 'Unassigned'}
+                        </div>
+                        
+                        ${c.lead_tag ? `<span class="lead-tag-badge ${c.lead_tag.replace(' ', '-')}">${c.lead_tag}</span>` : ''}
+                        
+                        <div class="card-actions">
+                          ${isUnassigned ? `
+                            <select class="form-select" onchange="assignLead(${c.id}, this.value)">
+                              <option value="">Assign to...</option>
+                              ${users.filter(u => u.role === 'agent' && u.active).map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+                            </select>
+                          ` : ''}
+                          
+                          <select class="form-select" style="font-size:11px" onchange="setLeadTag(${c.id}, this.value)">
+                            <option value="" ${!c.lead_tag ? 'selected' : ''}>🏷️ Tag...</option>
+                            <option value="Interested" ${c.lead_tag === 'Interested' ? 'selected' : ''}>✅ Interested</option>
+                            <option value="Not Interested" ${c.lead_tag === 'Not Interested' ? 'selected' : ''}>❌ Not Interested</option>
+                            <option value="Ringing" ${c.lead_tag === 'Ringing' ? 'selected' : ''}>📞 Ringing</option>
+                            <option value="Switch Off" ${c.lead_tag === 'Switch Off' ? 'selected' : ''}>📵 Switch Off</option>
+                          </select>
+                          <button class="btn btn-ghost btn-mini" style="color:var(--danger)" onclick="deleteLead(${c.id})">Delete</button>
+                        </div>
+                      </div>`;
+      }).join('');
     }
 
     function renderUsers() {
@@ -1010,28 +1257,35 @@
             <button class="btn btn-mini ${u.active ? 'btn-ghost' : ''}" onclick="toggleUserStatus(${u.id})">${u.active ? 'Disable' : 'Enable'}</button>
             <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="deleteUser(${u.id})">Delete</button>
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     function renderCatalog() {
       const list = document.getElementById('catalogList');
       list.innerHTML = catalogItems.map(item => `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee">
-          <span style="font-size:13px">${item.name} - ₹${item.price}</span>
+          <span style="font-size:13px">${item.name} - ₹${item.price || 0}</span>
           <button class="btn btn-mini btn-ghost" style="color:var(--danger)" onclick="deleteCatalogItem(${item.id})">Delete</button>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
     // --- ACTIONS ---
     async function assignLead(customerId, userId) {
       if (!userId) return;
+
       const res = await apiFetch('/api/admin/assign', {
+
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId, userId })
+        headers: {
+          'Content-Type': 'application/json'
+        }
+
+        ,
+        body: JSON.stringify({
+          customerId, userId
+        })
       });
+
       if (res && res.ok) {
         showToast('Assigned successfully', 'success');
         fetchPaginatedLeads();
@@ -1040,52 +1294,238 @@
 
     async function deleteLead(id) {
       if (!confirm('Delete this lead?')) return;
-      const res = await apiFetch(`/api/customers/${id}`, { method: 'DELETE' });
+
+      const res = await apiFetch(`/api/customers/${id}`, {
+        method: 'DELETE'
+      });
+
       if (res && res.ok) {
         showToast('Lead deleted', 'success');
+        selectedIds.delete(id);
+        updateSelectionBar();
         fetchPaginatedLeads();
       }
     }
 
+    // =====================
+    // BULK SELECT & DOWNLOAD
+    // =====================
+    function toggleSelect(id, checked) {
+      if (checked) {
+        selectedIds.add(id);
+      }
+
+      else {
+        selectedIds.delete(id);
+      }
+
+      updateSelectionBar();
+      // Update card highlight
+      const card = document.querySelector(`.lead-card[data-id="${id}"]`);
+      if (card) card.classList.toggle('selected-card', checked);
+    }
+
+    function updateSelectionBar() {
+      const bar = document.getElementById('selectionBar');
+      const count = selectedIds.size;
+
+      if (bar) {
+        bar.classList.toggle('active', count > 0);
+        const countEl = document.getElementById('selCount');
+
+        if (countEl) countEl.textContent = `${count} lead${count !== 1 ? 's' : ''} selected`;
+      }
+    }
+
+    function selectAllInColumn(colType) {
+      const colId = colType === 'unassigned' ? 'unassignedColumn' : colType === 'assigned' ? 'assignedColumn' : 'matureColumn';
+      const container = document.getElementById(colId);
+      if (!container) return;
+
+      container.querySelectorAll('.lead-checkbox').forEach(cb => {
+        cb.checked = true;
+        selectedIds.add(parseInt(cb.dataset.id));
+        const card = cb.closest('.lead-card');
+        if (card) card.classList.add('selected-card');
+      });
+      updateSelectionBar();
+    }
+
+    function deselectAllInColumn(colType) {
+      const colId = colType === 'unassigned' ? 'unassignedColumn' : colType === 'assigned' ? 'assignedColumn' : 'matureColumn';
+      const container = document.getElementById(colId);
+      if (!container) return;
+
+      container.querySelectorAll('.lead-checkbox').forEach(cb => {
+        cb.checked = false;
+        selectedIds.delete(parseInt(cb.dataset.id));
+        const card = cb.closest('.lead-card');
+        if (card) card.classList.remove('selected-card');
+      });
+      updateSelectionBar();
+    }
+
+    function clearSelection() {
+      selectedIds.clear();
+      document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.lead-card.selected-card').forEach(c => c.classList.remove('selected-card'));
+      updateSelectionBar();
+    }
+
+    function downloadCSV(format = 'csv') {
+      if (selectedIds.size === 0) {
+        showToast('Please select at least one lead', 'error'); return;
+      }
+
+      const selected = customers.filter(c => selectedIds.has(c.id));
+      const headers = ['ID', 'Name', 'Phone', 'Address', 'Note', 'Items', 'Tag', 'Agent', 'Status', 'Source', 'Time', 'Assigned At', 'Mature At'];
+
+      const rows = selected.map(c => {
+        const agent = users.find(u => u.id === c.assigned_user_id);
+        const agentName = agent ? agent.name : 'Unassigned';
+        const status = c.mature ? 'Mature' : (c.assigned_user_id ? 'Assigned' : 'Unassigned');
+
+        const items = Array.isArray(c.items) ? c.items.map(i => `${i.name}${i.qty > 1 ? ' x' + i.qty : ''}${i.price ? ' (₹' + i.price + ')' : ''}`).join(' | ') : '';
+        return [
+          c.id,
+          `"${(c.name || '').replace(/"/g, '""')}"`,
+          c.phone || '',
+          `"${(c.address || '').replace(/"/g, '""')}"`,
+          `"${(c.note || '').replace(/"/g, '""')}"`,
+          `"${items.replace(/"/g, '""')}"`,
+          c.lead_tag || '',
+          `"${agentName}"`,
+          status,
+          c.source || '',
+          `"${c.time || ''}"`,
+          c.assigned_at || '',
+          c.mature_at || ''
+        ].join(',');
+      });
+      const csvContent = [headers.join(','),
+      ...rows].join('\n');
+      const bom = '\uFEFF'; // UTF-8 BOM for Excel compatibility
+
+      const blob = new Blob([bom + csvContent], {
+        type: 'text/csv;charset=utf-8;'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+
+      a.download = `leads_${dateStr}_${selected.length}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast(`✅ Downloaded ${selected.length} leads`, 'success');
+    }
+
+
+
+    async function setLeadTag(customerId, tag) {
+      const res = await apiFetch(`/api/customers/${customerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_tag: tag || null })
+      });
+      if (res && res.ok) {
+        showToast('Tag updated', 'success');
+        fetchPaginatedLeads();
+      }
+    }
+
+    function selectAllInColumn(colId) {
+      const container = document.getElementById(colId);
+      if (!container) return;
+
+      container.querySelectorAll('.lead-checkbox').forEach(cb => {
+        cb.checked = true;
+        selectedIds.add(parseInt(cb.dataset.id));
+        const card = cb.closest('.lead-card');
+        if (card) card.classList.add('selected-card');
+      });
+      updateSelectionBar();
+    }
+
+    function deselectAllInColumn(colId) {
+      const container = document.getElementById(colId);
+      if (!container) return;
+
+      container.querySelectorAll('.lead-checkbox').forEach(cb => {
+        cb.checked = false;
+        selectedIds.delete(parseInt(cb.dataset.id));
+        const card = cb.closest('.lead-card');
+        if (card) card.classList.remove('selected-card');
+      });
+      updateSelectionBar();
+    }
+
     async function deleteUser(id) {
-      if (!confirm('Are you sure you want to PERMANENTLY delete this user? All leads assigned to them will be unassigned.')) return;
+      if (!confirm('Are you sure you want to PERMANENTLY delete this user? This cannot be undone.')) return;
+
       try {
-        const res = await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+        const res = await apiFetch(`/api/admin/users/${id}`, {
+          method: 'DELETE'
+        });
         if (res && res.ok) {
           showToast('User deleted permanently', 'success');
           await fetchUsers();
           fetchPaginatedLeads(); // Refresh leads in case assignments changed
-        } else if (res) {
+        }
+
+        else if (res) {
           const data = await res.json();
           showToast(data.error || 'Delete failed', 'error');
         }
-      } catch (e) {
+      }
+
+      catch (e) {
         showToast('Delete failed', 'error');
       }
     }
 
     async function toggleUserStatus(id) {
-      const res = await apiFetch(`/api/admin/users/${id}/toggle`, { method: 'POST' });
+      const res = await apiFetch(`/api/admin/users/${id}/toggle`, {
+        method: 'POST'
+      });
       if (res && res.ok) loadUsers();
     }
 
     async function saveRule() {
       const rule = document.getElementById('assignmentRule').value;
+
       const res = await apiFetch('/api/admin/settings', {
+
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignment_rule: rule })
+        headers: {
+          'Content-Type': 'application/json'
+        }
+
+        ,
+        body: JSON.stringify({
+          assignment_rule: rule
+        })
       });
       if (res && res.ok) showToast('Settings saved', 'success');
     }
 
     async function saveFocus() {
       const focus = document.getElementById('companyFocus').value;
+
       const res = await apiFetch('/api/admin/settings', {
+
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_focus: focus })
+        headers: {
+          'Content-Type': 'application/json'
+        }
+
+        ,
+        body: JSON.stringify({
+          company_focus: focus
+        })
       });
+
       if (res && res.ok) {
         companyFocus = focus;
         loadCatalog();
@@ -1093,15 +1533,47 @@
       }
     }
 
+    async function saveAISettings() {
+      const openai_api_key = document.getElementById('openaiApiKey').value.trim();
+      const ai_enabled = document.getElementById('aiEnabled').value === 'true';
+      const business_profile = document.getElementById('businessProfile').value.trim();
+
+      const res = await apiFetch('/api/admin/settings', {
+
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+
+        ,
+        body: JSON.stringify({
+          openai_api_key, ai_enabled, business_profile
+        })
+      });
+
+      if (res && res.ok) {
+        showToast('AI Settings saved', 'success');
+      }
+    }
+
     async function addCatalogItem() {
       const name = document.getElementById('newCatalogName').value.trim();
       const price = parseFloat(document.getElementById('newCatalogPrice').value) || 0;
       if (!name) return;
+
       const res = await apiFetch('/api/admin/catalog', {
+
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, type: companyFocus, price })
+        headers: {
+          'Content-Type': 'application/json'
+        }
+
+        ,
+        body: JSON.stringify({
+          name, type: companyFocus, price
+        })
       });
+
       if (res && res.ok) {
         document.getElementById('newCatalogName').value = '';
         document.getElementById('newCatalogPrice').value = '';
@@ -1111,7 +1583,9 @@
     }
 
     async function deleteCatalogItem(id) {
-      const res = await apiFetch(`/api/admin/catalog/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/admin/catalog/${id}`, {
+        method: 'DELETE'
+      });
       if (res && res.ok) loadCatalog();
     }
 
@@ -1123,10 +1597,18 @@
       if (!name || !email || !password) return showToast('Fill all fields', 'error');
 
       const res = await apiFetch('/api/admin/users', {
+
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role })
+        headers: {
+          'Content-Type': 'application/json'
+        }
+
+        ,
+        body: JSON.stringify({
+          name, email, password, role
+        })
       });
+
       if (res && res.ok) {
         showToast('User created', 'success');
         document.getElementById('newUserName').value = '';
@@ -1146,41 +1628,59 @@
 
     async function loadWhatsAppStatus() {
       const res = await fetch('/api/whatsapp/status');
+
       if (res.ok) {
         const data = await res.json();
-        updateWAStatus(!!data.ready);
+        updateWAStatus(! !data.ready);
       }
     }
 
     async function toggleQR() {
       document.getElementById('qrOverlay').classList.add('show');
-      if (wsConnected) ws.send(JSON.stringify({ type: 'get_qr' }));
+
+      if (wsConnected) ws.send(JSON.stringify({
+        type: 'get_qr'
+      }));
 
       // Fallback: Fetch via API if WebSocket is slow
       try {
         const res = await apiFetch('/api/whatsapp/qr-image');
+
         if (res && res.ok) {
           const data = await res.json();
+
           if (data.dataUrl) {
             const canvas = document.getElementById('qrCanvas');
             const img = new Image();
+
             img.onload = () => {
               const ctx = canvas.getContext('2d');
               canvas.width = 220;
               canvas.height = 220;
               ctx.drawImage(img, 0, 0);
-            };
+            }
+
+              ;
             img.src = data.dataUrl;
           }
         }
-      } catch (e) { console.error('QR Fallback failed:', e); }
+      }
+
+      catch (e) {
+        console.error('QR Fallback failed:', e);
+      }
     }
 
-    function closeQR() { document.getElementById('qrOverlay').classList.remove('show'); }
+    function closeQR() {
+      document.getElementById('qrOverlay').classList.remove('show');
+    }
 
     function showQRCode(qrString) {
       const canvas = document.getElementById('qrCanvas');
-      QRCode.toCanvas(canvas, qrString, { width: 220, margin: 2 });
+
+      QRCode.toCanvas(canvas, qrString, {
+        width: 220, margin: 2
+      });
     }
 
     window.onload = checkAuth;

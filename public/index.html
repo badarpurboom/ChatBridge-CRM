@@ -825,6 +825,56 @@
       color: #128C7E;
     }
 
+    .lead-tag-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 12px;
+      margin-top: 3px;
+    }
+
+    .lead-tag-badge.Interested {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1.5px solid #86efac;
+    }
+
+    .lead-tag-badge.Not-Interested {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1.5px solid #fca5a5;
+    }
+
+    .lead-tag-badge.Ringing {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border: 1.5px solid #93c5fd;
+    }
+
+    .lead-tag-badge.Switch-Off {
+      background: #f3f4f6;
+      color: #6b7280;
+      border: 1.5px solid #d1d5db;
+    }
+
+    .tag-select {
+      padding: 5px 8px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      background: white;
+      color: var(--text);
+    }
+
+    .tag-select:focus {
+      border-color: var(--green);
+    }
+
     .empty-state {
       text-align: center;
       padding: 60px 20px;
@@ -1138,6 +1188,24 @@
           <button class="filter-tab" onclick="setFilter('new',this)">🟡 New Leads</button>
           <button class="filter-tab" onclick="setFilter('contacted',this)">✅ Mature</button>
         </div>
+        <select id="tagFilterSelect" class="tag-select" onchange="setTagFilter(this.value)">
+          <option value="all">🏷️ All Tags</option>
+          <option value="Interested">✅ Interested</option>
+          <option value="Not Interested">❌ Not Interested</option>
+          <option value="Ringing">📞 Ringing</option>
+          <option value="Switch Off">📵 Switch Off</option>
+          <option value="none">⬜ No Tag</option>
+        </select>
+        <div style="display:flex; align-items:center; gap:6px; padding: 4px 0; flex-wrap:wrap;">
+          <span style="font-size:12px; font-weight:700; color:var(--text-light);">From:</span>
+          <input type="date" id="filterStartDate" class="tag-select" style="padding:4px 8px;"
+            onchange="fetchPaginatedLeads()">
+          <span style="font-size:12px; font-weight:700; color:var(--text-light);">To:</span>
+          <input type="date" id="filterEndDate" class="tag-select" style="padding:4px 8px;"
+            onchange="fetchPaginatedLeads()">
+          <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;"
+            onclick="clearDateFilter()">Clear</button>
+        </div>
       </div>
       <div class="customer-list" id="customerList"></div>
 
@@ -1188,7 +1256,9 @@
     let itemPrices = {};
     let editingCustomerId = null;
     let currentFilter = 'all';
+    let currentTag = 'all';
     let modalPhone = '', modalName = '', modalCustomerId = null;
+
     let wsConnected = false;
     let waReady = false;
     let ws = null;
@@ -1226,8 +1296,10 @@
 
             updateFocusLabels();
             renderItemsGrid();
+            initDateRange();
             fetchPaginatedLeads();
             updateStats();
+
           }
           else if (data.type === 'qr') {
             if (currentUser && currentUser.role === 'admin') {
@@ -1267,10 +1339,21 @@
             fetchPaginatedLeads();
           }
           else if (data.type === 'update_customer') {
-            fetchPaginatedLeads();
+            const idx = customers.findIndex(c => c.id === data.customer.id);
+            if (idx !== -1) {
+              customers[idx] = data.customer;
+              renderList();
+              updateStats();
+            } else {
+              // If not in current list, re-fetch to see if it should be on this page
+              if (paginationState.page === 1) fetchPaginatedLeads();
+            }
           }
           else if (data.type === 'delete_customer') {
-            fetchPaginatedLeads();
+            customers = customers.filter(c => c.id !== data.id);
+            renderList();
+            updateStats();
+            if (customers.length === 0) fetchPaginatedLeads();
           }
           else if (data.type === 'catalog_update') {
             if (data.companyFocus) companyFocus = data.companyFocus;
@@ -1574,6 +1657,8 @@
 
     async function fetchPaginatedLeads() {
       const searchVal = document.getElementById('searchInput').value;
+      const startDateVal = document.getElementById('filterStartDate') ? document.getElementById('filterStartDate').value : '';
+      const endDateVal = document.getElementById('filterEndDate') ? document.getElementById('filterEndDate').value : '';
 
       const q = new URLSearchParams({
         page: paginationState.page,
@@ -1581,12 +1666,13 @@
       });
       if (searchVal) q.append('search', searchVal);
       if (currentFilter === 'new') {
-        // For agents, 'new' means assigned to them but not yet contacted/mature
-        // For admins, it might mean unassigned. 
-        // Let's refine this: if it's an agent, they want to see their assigned leads that are NEW.
         q.append('status', 'assigned');
       }
       if (currentFilter === 'contacted') q.append('status', 'mature');
+      if (currentTag && currentTag !== 'all') q.append('tag', currentTag);
+      if (startDateVal) q.append('startDate', startDateVal);
+      if (endDateVal) q.append('endDate', endDateVal);
+
 
       try {
         const res = await fetch(`/api/customers/paginated?${q.toString()}`);
@@ -1665,6 +1751,16 @@
         ${!c.mature ? `<button class="btn-wa" style="background:#075E54" onclick="markMature(${c.id})">✅ Order Done</button>` : ''}
         <button class="btn-edit" onclick="startEdit(${c.id})">✏️ Edit</button>
         ${currentUser && currentUser.role === 'admin' ? `<button class="btn-delete" onclick="deleteCustomer(${c.id})">Delete</button>` : ''}
+      </div>
+      <div style="margin-top:6px;">
+        <select class="tag-select" style="width:100%;" onchange="setLeadTag(${c.id}, this.value)">
+          <option value="" ${!c.lead_tag ? 'selected' : ''}>Tag</option>
+          <option value="Interested" ${c.lead_tag === 'Interested' ? 'selected' : ''}>✅ Interested</option>
+          <option value="Not Interested" ${c.lead_tag === 'Not Interested' ? 'selected' : ''}>❌ Not Interested</option>
+          <option value="Ringing" ${c.lead_tag === 'Ringing' ? 'selected' : ''}>📞 Ringing</option>
+          <option value="Switch Off" ${c.lead_tag === 'Switch Off' ? 'selected' : ''}>📵 Switch Off</option>
+        </select>
+        ${c.lead_tag ? `<span class="lead-tag-badge ${c.lead_tag.replace(' ', '-')}">${c.lead_tag}</span>` : ''}
       </div>
       <div class="timestamp">⏰ ${c.time || ''}${c.messageCount > 1 ? ` · ${c.messageCount} messages` : ''}</div>
     </div>
@@ -1803,6 +1899,72 @@
       paginationState.page = 1;
       fetchPaginatedLeads();
     }
+
+    function setTagFilter(tag) {
+      currentTag = tag;
+      paginationState.page = 1;
+      fetchPaginatedLeads();
+    }
+
+    function initDateRange() {
+      const startEl = document.getElementById('filterStartDate');
+      const endEl = document.getElementById('filterEndDate');
+      if (!startEl || !endEl) return;
+
+      // Agent panel should open with all assigned leads, not only today's range.
+      if (currentUser && currentUser.role === 'agent') {
+        startEl.value = '';
+        endEl.value = '';
+        return;
+      }
+
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const today = `${y}-${m}-${d}`;
+      startEl.value = today;
+      endEl.value = today;
+    }
+
+    function clearDateFilter() {
+      const startEl = document.getElementById('filterStartDate');
+      const endEl = document.getElementById('filterEndDate');
+      if (startEl) startEl.value = '';
+      if (endEl) endEl.value = '';
+      paginationState.page = 1;
+      fetchPaginatedLeads();
+    }
+
+    async function setLeadTag(id, tag) {
+      try {
+        const res = await fetch(`/api/customers/${id}/tag`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag: tag || null })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const c = customers.find(x => x.id === id);
+          if (c) {
+            c.lead_tag = data.lead_tag;
+            if (currentUser && currentUser.role === 'agent') {
+              c.isNew = false;
+              c.contacted = true;
+            }
+          }
+          renderList();
+          updateStats();
+          showToast(`🏷️ Tag updated: ${tag || 'Removed'}`, 'success');
+          fetchPaginatedLeads();
+        } else {
+          showToast('❌ Tag update failed', 'error');
+        }
+      } catch (e) {
+        showToast('❌ Server error', 'error');
+      }
+    }
+
 
     function updateStats() {
       // statTotal is now handled by fetchPaginatedLeads directly to show accurate total DB count
