@@ -1576,6 +1576,15 @@ app.post('/api/whatsapp/disconnect', requireAdmin, async (req, res) => {
     qrCodeData = null;
     broadcastAdmin({ type: 'disconnected', reason: 'manual_logout' });
     res.json({ success: true });
+    // Re-initialize after short delay so a new QR is generated
+    setTimeout(async () => {
+      try {
+        console.log('[WA] Re-initializing client after manual logout...');
+        await client.initialize();
+      } catch (err) {
+        console.log('[WA] Re-init error:', err.message);
+      }
+    }, 2000);
   }
 });
 
