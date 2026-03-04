@@ -608,16 +608,26 @@ async function getPaginatedCustomers(user, options = {}) {
   if (options.startDate || options.endDate) {
     const startIso = options.startDate ? `${String(options.startDate).trim()}T00:00:00.000Z` : null;
     const endIso = options.endDate ? `${String(options.endDate).trim()}T23:59:59.999Z` : null;
-    // For assigned_at (ISO format) and time (localeString) we use assigned_at where available.
-    // Rows with no assigned_at are included based on id insertion order (newest = today).
-    if (startIso && endIso) {
-      whereClauses.push('((assigned_at IS NOT NULL AND assigned_at >= ? AND assigned_at <= ?) OR (assigned_at IS NULL AND time LIKE ?))');
-      params.push(startIso, endIso, `%${String(options.startDate).trim()}%`);
+
+    if (startIso && endIso && options.startDate === options.endDate) {
+      // Single day filtering (Today case)
+      const d = new Date(options.startDate);
+      const day = d.getDate();
+      const month = d.getMonth() + 1;
+      const year = d.getFullYear();
+      const dmY = `${day}/${month}/${year}`;
+      const ddmY = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+
+      whereClauses.push('((assigned_at IS NOT NULL AND assigned_at >= ? AND assigned_at <= ?) OR (assigned_at IS NULL AND (time LIKE ? OR time LIKE ? OR time LIKE ?)))');
+      params.push(startIso, endIso, `%${String(options.startDate).trim()}%`, `%${dmY}%`, `%${ddmY}%`);
+    } else if (startIso && endIso) {
+      whereClauses.push('(assigned_at >= ? AND assigned_at <= ?)');
+      params.push(startIso, endIso);
     } else if (startIso) {
-      whereClauses.push('(assigned_at IS NULL OR assigned_at >= ?)');
+      whereClauses.push('assigned_at >= ?');
       params.push(startIso);
     } else if (endIso) {
-      whereClauses.push('(assigned_at IS NULL OR assigned_at <= ?)');
+      whereClauses.push('assigned_at <= ?');
       params.push(endIso);
     }
   } else if (options.date) {
@@ -836,15 +846,30 @@ client.on('ready', () => {
   broadcastAdmin({ type: 'ready', message: 'WhatsApp connected' });
 });
 
-client.on('auth_failure', () => {
-  console.log('[WA] Auth failure');
-  broadcastAdmin({ type: 'auth_failure' });
+client.on('auth_failure', (msg) => {
+  console.log('[WA] Auth failure:', msg);
+  isReady = false;
+  qrCodeData = null;
+  broadcastAdmin({ type: 'disconnected', reason: 'auth_failure' });
 });
 
 client.on('disconnected', (reason) => {
   console.log('[WA] Disconnected:', reason);
   isReady = false;
+  qrCodeData = null;
   broadcastAdmin({ type: 'disconnected', reason });
+});
+
+// state_changed catches phone-side logout which 'disconnected' sometimes misses
+client.on('change_state', (state) => {
+  console.log('[WA] State changed:', state);
+  if (state === 'CONFLICT' || state === 'UNLAUNCHED' || state === 'UNPAIRED' || state === 'UNPAIRED_IDLE') {
+    if (isReady) {
+      isReady = false;
+      qrCodeData = null;
+      broadcastAdmin({ type: 'disconnected', reason: state });
+    }
+  }
 });
 
 client.on('message', async (msg) => {
@@ -1520,8 +1545,41 @@ app.post('/api/admin/cleanup-leads', requireAdmin, async (req, res) => {
 });
 
 // ==========================================
+// WHATSAPP STATUS ROUTES
+// ==========================================
+app.get('/api/whatsapp/status', requireAuth, (req, res) => {
+  res.json({ ready: isReady, hasQr: !!qrCodeData });
+});
+
+app.get('/api/whatsapp/qr-image', requireAdmin, async (req, res) => {
+  if (!qrCodeData) return res.json({ dataUrl: null });
+  try {
+    const dataUrl = await qrcodeLib.toDataURL(qrCodeData);
+    res.json({ dataUrl });
+  } catch (e) {
+    res.json({ dataUrl: null });
+  }
+});
+
+// ==========================================
 // CUSTOMER ROUTES
 // ==========================================
+app.post('/api/whatsapp/disconnect', requireAdmin, async (req, res) => {
+  try {
+    if (isReady) {
+      await client.logout();
+    }
+  } catch (e) {
+    console.log('[WA] Logout error (ignored):', e.message);
+  } finally {
+    isReady = false;
+    qrCodeData = null;
+    broadcastAdmin({ type: 'disconnected', reason: 'manual_logout' });
+    res.json({ success: true });
+  }
+});
+
+
 app.get('/api/customers', requireAuth, async (req, res) => {
   const customers = await getCustomersForUser(req.session.user);
   res.json(customers);

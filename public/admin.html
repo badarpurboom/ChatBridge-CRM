@@ -431,6 +431,22 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
+    .wa-disconnect-btn {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .wa-disconnect-btn:hover {
+      background: rgba(239, 68, 68, 0.4);
+    }
+
     /* OVERLAYS */
     .modal-overlay,
     .login-overlay,
@@ -677,6 +693,8 @@
       <div class="wa-status disconnected" id="waStatusBtn" onclick="toggleQR()">
         <div class="status-dot"></div><span id="waStatusText">WhatsApp Connect</span>
       </div>
+      <button class="wa-disconnect-btn" id="waDisconnectBtn" onclick="disconnectWA()" style="display:none">⏏
+        Disconnect</button>
     </div>
   </div>
   <!-- QR MODAL -->
@@ -983,6 +1001,7 @@
       }
 
       connectWS();
+      startWAStatusPolling();
       await loadUsers();
       await loadSettings();
       loadWhatsAppStatus();
@@ -1060,13 +1079,18 @@
 
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
-        if (data.type === 'qr') showQRCode(data.qr);
-
+        if (data.type === 'qr') {
+          showQRCode(data.qr);
+          updateWAStatus(false);
+        }
         else if (data.type === 'ready') {
           updateWAStatus(true);
           closeQR();
         }
-
+        else if (data.type === 'disconnected' || data.type === 'auth_failure') {
+          updateWAStatus(false);
+          showToast('⚠️ WhatsApp Disconnected — Please reconnect via QR', 'error');
+        }
         else if (data.type === 'update_customer') {
           const idx = customers.findIndex(c => c.id === data.customer.id);
           if (idx !== -1) {
@@ -1096,11 +1120,36 @@
         ;
 
       ws.onclose = () => {
-        wsConnected = false; setTimeout(connectWS, 3000);
-      }
+        wsConnected = false;
+        setTimeout(connectWS, 3000);
+      };
 
-        ;
+      ws.onerror = () => {
+        wsConnected = false;
+      };
+
+      ;
     }
+
+    // Polls /api/whatsapp/status every 30s to catch any missed disconnect events
+    function startWAStatusPolling() {
+      setInterval(async () => {
+        try {
+          const res = await fetch('/api/whatsapp/status');
+          if (res.ok) {
+            const data = await res.json();
+            const serverReady = !!data.ready;
+            if (serverReady !== waReady) {
+              updateWAStatus(serverReady);
+              if (!serverReady) {
+                showToast('⚠️ WhatsApp Disconnected — Please reconnect via QR', 'error');
+              }
+            }
+          }
+        } catch (e) { /* ignore network errors during poll */ }
+      }, 30000); // every 30 seconds
+    }
+
 
     async function fetchPaginatedLeads() {
       const startDateVal = document.getElementById('filterStartDate').value;
@@ -1624,6 +1673,28 @@
       const btn = document.getElementById('waStatusBtn');
       btn.className = 'wa-status ' + (ready ? 'connected' : 'disconnected');
       document.getElementById('waStatusText').textContent = ready ? 'WhatsApp Connected' : 'WhatsApp Connect';
+      // Show disconnect button only when connected
+      const discBtn = document.getElementById('waDisconnectBtn');
+      if (discBtn) discBtn.style.display = ready ? 'inline-block' : 'none';
+    }
+
+    async function disconnectWA() {
+      if (!confirm('WhatsApp disconnect karna chahte ho? Dobara connect karne ke liye QR scan karna hoga.')) return;
+      const discBtn = document.getElementById('waDisconnectBtn');
+      if (discBtn) { discBtn.disabled = true; discBtn.textContent = 'Disconnecting...'; }
+      try {
+        const res = await apiFetch('/api/whatsapp/disconnect', { method: 'POST' });
+        if (res && res.ok) {
+          updateWAStatus(false);
+          showToast('✅ WhatsApp Disconnected', 'success');
+        } else {
+          showToast('Disconnect failed', 'error');
+        }
+      } catch (e) {
+        showToast('Disconnect failed', 'error');
+      } finally {
+        if (discBtn) { discBtn.disabled = false; discBtn.textContent = '⏏ Disconnect'; }
+      }
     }
 
     async function loadWhatsAppStatus() {
@@ -1631,9 +1702,10 @@
 
       if (res.ok) {
         const data = await res.json();
-        updateWAStatus(! !data.ready);
+        updateWAStatus(!!data.ready);
       }
     }
+
 
     async function toggleQR() {
       document.getElementById('qrOverlay').classList.add('show');
